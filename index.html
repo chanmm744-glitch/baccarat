@@ -3,278 +3,132 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>百家樂全功能戰術分析儀表板</title>
+    <title>百家樂個人輔助分析儀表板</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <style>
-        .bead-road { display: grid; grid-template-rows: repeat(6, minmax(0, 1fr)); grid-auto-flow: column; gap: 2px; }
-        .road-cell { width: 22px; height: 22px; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: bold; border-radius: 9999px; }
-    </style>
 </head>
-<body class="bg-slate-950 text-slate-100 min-h-screen p-3 md:p-6 font-sans select-none">
-    <div class="max-w-6xl mx-auto space-y-4">
+<body class="bg-slate-950 text-slate-100 min-h-screen p-4 font-sans select-none">
+    <div class="max-w-5xl mx-auto space-y-4">
         
-        <!-- 頂部資訊與後台切換 -->
-        <div class="flex flex-wrap justify-between items-center bg-slate-900 p-4 rounded-xl border border-slate-800 shadow-lg gap-3">
+        <!-- 頂部資訊欄 -->
+        <div class="flex justify-between items-center bg-slate-900 p-4 rounded-xl border border-slate-800 shadow-lg">
             <div>
-                <h1 class="text-lg font-bold text-emerald-400">百家樂全功能戰術分析儀表板</h1>
-                <p class="text-xs text-slate-400">剩餘張數：<span id="total-cards" class="text-emerald-300 font-mono font-bold">416</span> / <span id="initial-total-cards">416</span> (<span id="deck-num-display">8</span>副牌)</p>
+                <h1 class="text-lg font-bold text-emerald-400">百家樂個人實時戰術板</h1>
+                <p class="text-xs text-slate-400">當前剩餘張數：<span id="total-cards" class="text-emerald-300 font-mono font-bold">416</span> / 416 (8副牌)</p>
             </div>
-            <div class="flex items-center gap-2">
-                <button onclick="undoLastAction()" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-xs font-semibold rounded-lg border border-slate-700 transition">
-                    ↩ 撤銷上一步
+            <div class="flex gap-2">
+                <button onclick="undoLastCard()" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-xs font-semibold rounded-lg border border-slate-700 transition">
+                    ↩ 撤銷上一張
                 </button>
                 <button onclick="resetShoe()" class="px-3 py-1.5 bg-rose-900/80 hover:bg-rose-800 text-xs font-semibold rounded-lg border border-rose-700 transition">
                     洗牌重置
                 </button>
-                <button onclick="toggleAdminPanel()" class="px-3 py-1.5 bg-amber-600/80 hover:bg-amber-500 text-xs font-semibold rounded-lg transition">
-                    ⚙️ 基本後台
-                </button>
             </div>
         </div>
 
-        <!-- 基本後台 (預設隱藏) -->
-        <div id="admin-panel" class="hidden bg-slate-900 p-4 rounded-xl border border-amber-500/50 space-y-3">
-            <h3 class="text-xs font-bold text-amber-400 uppercase tracking-wider">⚙️ 基本後台參數設定</h3>
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
-                <div>
-                    <label class="block text-slate-400 mb-1">牌靴副數設定：</label>
-                    <select id="setting-decks" onchange="applyAdminSettings()" class="bg-slate-800 text-white p-2 rounded w-full border border-slate-700">
-                        <option value="8" selected>8 副牌 (416張)</option>
-                        <option value="6">6 副牌 (312張)</option>
-                        <option value="1">1 副牌 (52張 - 測試用)</option>
-                    </select>
-                </div>
-                <div>
-                    <label class="block text-slate-400 mb-1">正 EV 訊號靈敏度：</label>
-                    <select id="setting-sensitivity" onchange="applyAdminSettings()" class="bg-slate-800 text-white p-2 rounded w-full border border-slate-700">
-                        <option value="0.0" selected>標準 (EV > 0% 觸發)</option>
-                        <option value="0.005">保守 (EV > +0.5% 觸發)</option>
-                        <option value="-0.005">激進 (EV > -0.5% 觸發)</option>
-                    </select>
-                </div>
-                <div class="flex items-end gap-2">
-                    <button onclick="exportData()" class="w-1/2 p-2 bg-slate-800 hover:bg-slate-700 rounded border border-slate-700">匯出數據</button>
-                    <button onclick="importData()" class="w-1/2 p-2 bg-slate-800 hover:bg-slate-700 rounded border border-slate-700">匯入數據</button>
-                </div>
-            </div>
-        </div>
-
-        <!-- 簡易分析與戰術提示 -->
+        <!-- 訊號提示框 -->
         <div id="signal-box" class="bg-slate-900 p-4 rounded-xl border border-slate-800 text-center transition-all">
-            <span class="text-xs text-slate-400 block mb-1">動態戰術綜合分析</span>
-            <div id="signal-text" class="text-base font-bold text-slate-300">數據蒐集期：請開始錄入牌面與勝負路單...</div>
+            <span class="text-xs text-slate-400 block mb-1">AI 算牌模型動態建議</span>
+            <div id="signal-text" class="text-base font-bold text-slate-300">資料蒐集期：請繼續輸入牌面...</div>
         </div>
 
-        <!-- 主操作區：牌面錄入 + 路單記號 -->
+        <!-- 主操作面板與機率面板 -->
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
             
-            <!-- 左側 2 欄：手動輸入區 -->
-            <div class="lg:col-span-2 space-y-4">
-                
-                <!-- 1. 出牌點數錄入 -->
-                <div class="bg-slate-900 p-4 rounded-xl border border-slate-800 space-y-2">
-                    <h2 class="text-xs font-bold text-slate-400 uppercase tracking-wider">【步驟 1】錄入開出牌面點數（算牌用）</h2>
-                    <div class="grid grid-cols-5 gap-2">
-                        <script>
-                            const cards = [
-                                {label: 'A', val: 1}, {label: '2', val: 2}, {label: '3', val: 3}, {label: '4', val: 4}, {label: '5', val: 5},
-                                {label: '6', val: 6}, {label: '7', val: 7}, {label: '8', val: 8}, {label: '9', val: 9}, {label: '10/J/Q/K', val: 0}
-                            ];
-                            cards.forEach(c => {
-                                document.write(`
-                                    <button onclick="inputCard(${c.val})" class="h-12 bg-slate-800 hover:bg-emerald-600 active:scale-95 text-white text-base font-bold rounded-lg border border-slate-700 transition flex flex-col items-center justify-center">
-                                        <span>${c.label}</span>
-                                        <span id="card-count-${c.val}" class="text-[9px] text-slate-400 font-normal">剩 32</span>
-                                    </button>
-                                `);
-                            });
-                        </script>
-                    </div>
+            <!-- 手動點擊快選區 -->
+            <div class="lg:col-span-2 bg-slate-900 p-5 rounded-xl border border-slate-800 space-y-4">
+                <h2 class="text-xs font-bold text-slate-400 uppercase tracking-wider">點擊下方按鈕錄入開出牌面</h2>
+                <div class="grid grid-cols-5 gap-2">
+                    <script>
+                        const cards = [
+                            {label: 'A', val: 1}, {label: '2', val: 2}, {label: '3', val: 3}, {label: '4', val: 4}, {label: '5', val: 5},
+                            {label: '6', val: 6}, {label: '7', val: 7}, {label: '8', val: 8}, {label: '9', val: 9}, {label: '10/J/Q/K', val: 0}
+                        ];
+                        cards.forEach(c => {
+                            document.write(`
+                                <button onclick="inputCard(${c.val})" class="h-16 bg-slate-800 hover:bg-emerald-600 active:scale-95 text-white text-lg font-bold rounded-lg border border-slate-700 transition flex flex-col items-center justify-center">
+                                    <span>${c.label}</span>
+                                    <span id="card-count-${c.val}" class="text-[10px] text-slate-400 font-normal">剩 ${c.val === 0 ? 128 : 32}</span>
+                                </button>
+                            `);
+                        });
+                    </script>
                 </div>
-
-                <!-- 2. 莊閒和勝負錄入 -->
-                <div class="bg-slate-900 p-4 rounded-xl border border-slate-800 space-y-2">
-                    <h2 class="text-xs font-bold text-slate-400 uppercase tracking-wider">【步驟 2】錄入單局勝負結果（生成路單）</h2>
-                    <div class="grid grid-cols-3 gap-3">
-                        <button onclick="inputOutcome('B')" class="py-3 bg-rose-600/30 hover:bg-rose-600/50 border border-rose-500 text-rose-300 font-extrabold rounded-xl text-sm transition">
-                            🔴 莊勝 (Banker)
-                        </button>
-                        <button onclick="inputOutcome('P')" class="py-3 bg-blue-600/30 hover:bg-blue-600/50 border border-blue-500 text-blue-300 font-extrabold rounded-xl text-sm transition">
-                            🔵 閒勝 (Player)
-                        </button>
-                        <button onclick="inputOutcome('T')" class="py-3 bg-emerald-600/30 hover:bg-emerald-600/50 border border-emerald-500 text-emerald-300 font-extrabold rounded-xl text-sm transition">
-                            🟢 和局 (Tie)
-                        </button>
-                    </div>
-                </div>
-
-                <!-- 大路路單展示 -->
-                <div class="bg-slate-900 p-4 rounded-xl border border-slate-800 space-y-2">
-                    <div class="flex justify-between items-center">
-                        <h2 class="text-xs font-bold text-slate-400 uppercase tracking-wider">電子大路單 (Big Road)</h2>
-                        <span class="text-xs text-slate-500">自動連莊/連閒換列</span>
-                    </div>
-                    <div class="bg-slate-950 p-2 rounded-lg border border-slate-800 overflow-x-auto min-h-[150px]">
-                        <div id="big-road" class="bead-road">
-                            <!-- 動態渲染路紙 -->
-                        </div>
-                    </div>
-                </div>
-
             </div>
 
-            <!-- 右側 1 欄：勝負統計與機率期望值 -->
-            <div class="space-y-4">
+            <!-- 動態勝率與 EV 展示 -->
+            <div class="bg-slate-900 p-5 rounded-xl border border-slate-800 flex flex-col justify-between space-y-3">
+                <h2 class="text-xs font-bold text-slate-400 uppercase tracking-wider">動態勝率與期望值 (EV)</h2>
                 
-                <!-- 莊閒和勝負統計 -->
-                <div class="bg-slate-900 p-4 rounded-xl border border-slate-800 space-y-3">
-                    <h2 class="text-xs font-bold text-slate-400 uppercase tracking-wider">牌局勝負統計</h2>
-                    <div class="grid grid-cols-4 gap-2 text-center text-xs">
-                        <div class="p-2 bg-slate-950 rounded border border-slate-800">
-                            <div class="text-slate-400">總局數</div>
-                            <div id="stat-total" class="text-sm font-bold font-mono text-slate-200">0</div>
+                <div class="space-y-2">
+                    <div class="flex justify-between items-center p-2.5 bg-slate-950/60 rounded-lg border border-slate-800/80">
+                        <span class="text-xs font-semibold text-rose-400">莊家 (Banker)</span>
+                        <div class="text-right">
+                            <div id="prob-b" class="text-xs font-mono text-slate-300">45.86%</div>
+                            <div id="ev-b" class="text-[11px] font-mono text-slate-500">EV: -1.06%</div>
                         </div>
-                        <div class="p-2 bg-rose-950/40 rounded border border-rose-900/50">
-                            <div class="text-rose-400">莊數</div>
-                            <div id="stat-b" class="text-sm font-bold font-mono text-rose-300">0</div>
+                    </div>
+
+                    <div class="flex justify-between items-center p-2.5 bg-slate-950/60 rounded-lg border border-slate-800/80">
+                        <span class="text-xs font-semibold text-blue-400">閒家 (Player)</span>
+                        <div class="text-right">
+                            <div id="prob-p" class="text-xs font-mono text-slate-300">44.62%</div>
+                            <div id="ev-p" class="text-[11px] font-mono text-slate-500">EV: -1.24%</div>
                         </div>
-                        <div class="p-2 bg-blue-950/40 rounded border border-blue-900/50">
-                            <div class="text-blue-400">閒數</div>
-                            <div id="stat-p" class="text-sm font-bold font-mono text-blue-300">0</div>
-                        </div>
-                        <div class="p-2 bg-emerald-950/40 rounded border border-emerald-900/50">
-                            <div class="text-emerald-400">和數</div>
-                            <div id="stat-t" class="text-sm font-bold font-mono text-emerald-300">0</div>
+                    </div>
+
+                    <div class="flex justify-between items-center p-2.5 bg-slate-950/60 rounded-lg border border-slate-800/80">
+                        <span class="text-xs font-semibold text-emerald-400">和局 (Tie)</span>
+                        <div class="text-right">
+                            <div id="prob-t" class="text-xs font-mono text-slate-300">9.52%</div>
+                            <div id="ev-t" class="text-[11px] font-mono text-slate-500">EV: -14.36%</div>
                         </div>
                     </div>
                 </div>
 
-                <!-- 動態勝率與期望值 -->
-                <div class="bg-slate-900 p-4 rounded-xl border border-slate-800 space-y-3">
-                    <h2 class="text-xs font-bold text-slate-400 uppercase tracking-wider">即時算牌勝率與 EV</h2>
-                    
-                    <div class="space-y-2">
-                        <div class="flex justify-between items-center p-2.5 bg-slate-950/60 rounded-lg border border-slate-800/80">
-                            <span class="text-xs font-semibold text-rose-400">莊家 (Banker)</span>
-                            <div class="text-right">
-                                <div id="prob-b" class="text-xs font-mono text-slate-300">45.86%</div>
-                                <div id="ev-b" class="text-[11px] font-mono text-slate-500">EV: -1.06%</div>
-                            </div>
-                        </div>
-
-                        <div class="flex justify-between items-center p-2.5 bg-slate-950/60 rounded-lg border border-slate-800/80">
-                            <span class="text-xs font-semibold text-blue-400">閒家 (Player)</span>
-                            <div class="text-right">
-                                <div id="prob-p" class="text-xs font-mono text-slate-300">44.62%</div>
-                                <div id="ev-p" class="text-[11px] font-mono text-slate-500">EV: -1.24%</div>
-                            </div>
-                        </div>
-
-                        <div class="flex justify-between items-center p-2.5 bg-slate-950/60 rounded-lg border border-slate-800/80">
-                            <span class="text-xs font-semibold text-emerald-400">和局 (Tie)</span>
-                            <div class="text-right">
-                                <div id="prob-t" class="text-xs font-mono text-slate-300">9.52%</div>
-                                <div id="ev-t" class="text-[11px] font-mono text-slate-500">EV: -14.36%</div>
-                            </div>
-                        </div>
-                    </div>
+                <div class="text-[11px] text-slate-500 leading-tight">
+                    * 註：正 EV 僅會在牌靴中後段、剩餘點數產生嚴重傾斜時觸發。
                 </div>
+            </div>
 
-                <!-- 已輸入牌面點數歷史 -->
-                <div class="bg-slate-900 p-4 rounded-xl border border-slate-800">
-                    <h2 class="text-xs font-bold text-slate-400 mb-2">出牌序列歷史：</h2>
-                    <div id="history-container" class="flex flex-wrap gap-1 max-h-20 overflow-y-auto text-xs font-mono">
-                        <span class="text-slate-600 italic">尚無資料</span>
-                    </div>
-                </div>
+        </div>
 
+        <!-- 歷史出牌序列 -->
+        <div class="bg-slate-900 p-4 rounded-xl border border-slate-800">
+            <h2 class="text-xs font-bold text-slate-400 mb-2">已輸入出牌序列：</h2>
+            <div id="history-container" class="flex flex-wrap gap-1.5 max-h-24 overflow-y-auto text-xs font-mono">
+                <span class="text-slate-600 italic">尚無資料</span>
             </div>
         </div>
 
     </div>
 
     <script>
-        let deckNum = 8;
-        let sensitivity = 0.0;
-        let INITIAL_DECK = {};
+        const INITIAL_DECK = { 1: 32, 2: 32, 3: 32, 4: 32, 5: 32, 6: 32, 7: 32, 8: 32, 9: 32, 0: 128 };
+        let deck = { ...INITIAL_DECK };
         let totalCards = 416;
-
-        let deck = {};
         let cardHistory = [];
-        let outcomeHistory = []; 
-        let actionStack = []; 
-
-        function initDeckConfig(num) {
-            deckNum = num;
-            const singleDeck = { 1: 4, 2: 4, 3: 4, 4: 4, 5: 4, 6: 4, 7: 4, 8: 4, 9: 4, 0: 16 };
-            INITIAL_DECK = {};
-            totalCards = num * 52;
-            for (let k in singleDeck) {
-                INITIAL_DECK[k] = singleDeck[k] * num;
-            }
-            deck = { ...INITIAL_DECK };
-            document.getElementById('initial-total-cards').innerText = totalCards;
-            document.getElementById('deck-num-display').innerText = num;
-        }
-
-        function toggleAdminPanel() {
-            const panel = document.getElementById('admin-panel');
-            panel.classList.toggle('hidden');
-        }
-
-        function applyAdminSettings() {
-            const num = parseInt(document.getElementById('setting-decks').value);
-            sensitivity = parseFloat(document.getElementById('setting-sensitivity').value);
-            if (num !== deckNum) {
-                if (confirm('變更牌靴副數將重置當前所有資料，確定繼續？')) {
-                    initDeckConfig(num);
-                    cardHistory = [];
-                    outcomeHistory = [];
-                    actionStack = [];
-                    updateDashboard();
-                } else {
-                    document.getElementById('setting-decks').value = deckNum;
-                }
-            } else {
-                updateDashboard();
-            }
-        }
 
         function inputCard(val) {
             if (deck[val] <= 0) return alert('該點數牌已用盡！');
             deck[val]--;
             totalCards--;
             cardHistory.push(val);
-            actionStack.push({ type: 'card', val: val });
             updateDashboard();
         }
 
-        function inputOutcome(type) {
-            outcomeHistory.push(type);
-            actionStack.push({ type: 'outcome', val: type });
-            updateDashboard();
-        }
-
-        function undoLastAction() {
-            if (actionStack.length === 0) return;
-            const last = actionStack.pop();
-            if (last.type === 'card') {
-                const val = cardHistory.pop();
-                deck[val]++;
-                totalCards++;
-            } else if (last.type === 'outcome') {
-                outcomeHistory.pop();
-            }
+        function undoLastCard() {
+            if (cardHistory.length === 0) return;
+            const lastVal = cardHistory.pop();
+            deck[lastVal]++;
+            totalCards++;
             updateDashboard();
         }
 
         function resetShoe() {
-            if (!confirm('確定要洗牌重置當前所有數據嗎？')) return;
+            if (!confirm('確定要洗牌並重置當前牌靴嗎？')) return;
             deck = { ...INITIAL_DECK };
-            totalCards = deckNum * 52;
+            totalCards = 416;
             cardHistory = [];
-            outcomeHistory = [];
-            actionStack = [];
             updateDashboard();
         }
 
@@ -288,63 +142,14 @@
             if (cardHistory.length === 0) {
                 histEl.innerHTML = '<span class="text-slate-600 italic">尚無資料</span>';
             } else {
-                histEl.innerHTML = cardHistory.map(c => `<span class="px-1.5 py-0.5 bg-slate-800 border border-slate-700 text-emerald-400 rounded">${c === 0 ? 'K' : c}</span>`).join('');
+                histEl.innerHTML = cardHistory.map(c => `<span class="px-2 py-0.5 bg-slate-800 border border-slate-700 text-emerald-400 rounded">${c === 0 ? 'K' : c}</span>`).join('');
             }
 
-            updateRoadAndStats();
-            calculateProbabilitiesAndAnalysis();
+            calculateProbabilities();
         }
 
-        function updateRoadAndStats() {
-            let bCount = 0, pCount = 0, tCount = 0;
-            outcomeHistory.forEach(o => {
-                if (o === 'B') bCount++;
-                if (o === 'P') pCount++;
-                if (o === 'T') tCount++;
-            });
-
-            document.getElementById('stat-total').innerText = outcomeHistory.length;
-            document.getElementById('stat-b').innerText = bCount;
-            document.getElementById('stat-p').innerText = pCount;
-            document.getElementById('stat-t').innerText = tCount;
-
-            const roadEl = document.getElementById('big-road');
-            roadEl.innerHTML = '';
-
-            let columns = [];
-            let currCol = [];
-            let lastWinner = null;
-
-            outcomeHistory.forEach(o => {
-                if (o === 'T') {
-                    if (currCol.length > 0) {
-                        currCol[currCol.length - 1].ties = (currCol[currCol.length - 1].ties || 0) + 1;
-                    }
-                } else {
-                    if (lastWinner === null || o === lastWinner) {
-                        currCol.push({ type: o, ties: 0 });
-                    } else {
-                        columns.push(currCol);
-                        currCol = [{ type: o, ties: 0 }];
-                    }
-                    lastWinner = o;
-                }
-            });
-            if (currCol.length > 0) columns.push(currCol);
-
-            columns.forEach(col => {
-                col.forEach(item => {
-                    const cell = document.createElement('div');
-                    let bgClass = item.type === 'B' ? 'bg-rose-600 text-white' : 'bg-blue-600 text-white';
-                    cell.className = `road-cell ${bgClass}`;
-                    cell.innerText = item.ties > 0 ? item.ties : (item.type === 'B' ? '莊' : '閒');
-                    roadEl.appendChild(cell);
-                });
-            });
-        }
-
-        function calculateProbabilitiesAndAnalysis() {
-            if (totalCards < 20) {
+        function calculateProbabilities() {
+            if (totalCards < 30) {
                 document.getElementById('signal-text').innerText = '牌靴即將結束，建議停止下注';
                 return;
             }
@@ -368,28 +173,21 @@
             updateEVDisplay('ev-p', evP);
             updateEVDisplay('ev-t', evT);
 
-            let roadAdvice = "";
-            const recent = outcomeHistory.filter(o => o !== 'T').slice(-5);
-            const lastThree = recent.slice(-3).join('');
-            if (lastThree === 'BBB') roadAdvice = " | ⚠️ 觀察到莊家長龍趨勢";
-            else if (lastThree === 'PPP') roadAdvice = " | ⚠️ 觀察到閒家長龍趨勢";
-            else if (lastThree === 'BPB' || lastThree === 'PBP') roadAdvice = " | ⚠️ 當前呈現單跳路勢";
-
             const signalBox = document.getElementById('signal-box');
             const signalText = document.getElementById('signal-text');
 
-            if (evB > sensitivity) {
+            if (evB > 0) {
                 signalBox.className = "bg-rose-950/80 border border-rose-500 p-4 rounded-xl text-center shadow-lg shadow-rose-950/50";
-                signalText.innerHTML = `<span class="text-rose-400 font-extrabold text-base md:text-lg">🔥 算牌優勢：推薦下注【莊家】(EV: +${(evB * 100).toFixed(2)}%)${roadAdvice}</span>`;
-            } else if (evP > sensitivity) {
+                signalText.innerHTML = `<span class="text-rose-400 font-extrabold text-lg">🔥 觸發優勢訊號：推薦下注【莊家】(EV: +${(evB * 100).toFixed(2)}%)</span>`;
+            } else if (evP > 0) {
                 signalBox.className = "bg-blue-950/80 border border-blue-500 p-4 rounded-xl text-center shadow-lg shadow-blue-950/50";
-                signalText.innerHTML = `<span class="text-blue-400 font-extrabold text-base md:text-lg">🔥 算牌優勢：推薦下注【閒家】(EV: +${(evP * 100).toFixed(2)}%)${roadAdvice}</span>`;
-            } else if (evT > sensitivity) {
+                signalText.innerHTML = `<span class="text-blue-400 font-extrabold text-lg">🔥 觸發優勢訊號：推薦下注【閒家】(EV: +${(evP * 100).toFixed(2)}%)</span>`;
+            } else if (evT > 0) {
                 signalBox.className = "bg-emerald-950/80 border border-emerald-500 p-4 rounded-xl text-center shadow-lg shadow-emerald-950/50";
-                signalText.innerHTML = `<span class="text-emerald-400 font-extrabold text-base md:text-lg">⚡ 高機率和局：推薦觀望或小注【和局】(EV: +${(evT * 100).toFixed(2)}%)${roadAdvice}</span>`;
+                signalText.innerHTML = `<span class="text-emerald-400 font-extrabold text-lg">⚡ 高機率和局警示：推薦觀望或小注【和局】(EV: +${(evT * 100).toFixed(2)}%)</span>`;
             } else {
                 signalBox.className = "bg-slate-900 p-4 rounded-xl border border-slate-800 text-center";
-                signalText.innerText = `當前無正 EV 優勢，建議觀望或順應路勢${roadAdvice}`;
+                signalText.innerText = `當前無正 EV 下注點，建議觀望或順應路勢`;
             }
         }
 
@@ -405,41 +203,6 @@
             }
         }
 
-        function exportData() {
-            const data = { deckNum, cardHistory, outcomeHistory };
-            const blob = new Blob([JSON.stringify(data)], { type: 'application/json' });
-            const a = document.createElement('a');
-            a.href = URL.createObjectURL(blob);
-            a.download = `baccarat_data_${Date.now()}.json`;
-            a.click();
-        }
-
-        function importData() {
-            const input = document.createElement('input');
-            input.type = 'file';
-            input.onchange = e => {
-                const file = e.target.files[0];
-                const reader = new FileReader();
-                reader.onload = event => {
-                    try {
-                        const data = JSON.parse(event.target.result);
-                        initDeckConfig(data.deckNum || 8);
-                        cardHistory = data.cardHistory || [];
-                        outcomeHistory = data.outcomeHistory || [];
-                        cardHistory.forEach(c => deck[c]--);
-                        totalCards -= cardHistory.length;
-                        updateDashboard();
-                        alert('歷史數據匯入成功！');
-                    } catch (err) {
-                        alert('檔案格式錯誤，匯入失敗');
-                    }
-                };
-                reader.readAsText(file);
-            };
-            input.click();
-        }
-
-        initDeckConfig(8);
         updateDashboard();
     </script>
 </body>
