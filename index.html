@@ -3,18 +3,18 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>百家樂專業級 13 軌戰術儀表板</title>
+    <title>百家樂專業級 13 軌戰術儀表板 (淺色版)</title>
     <style>
         :root {
-            --bg-color: #0b1329;
-            --card-bg: #111c38;
-            --border-color: #1e2d54;
-            --text-main: #f8fafc;
+            --bg-color: #f1f5f9;
+            --card-bg: #ffffff;
+            --border-color: #cbd5e1;
+            --text-main: #0f172a;
             --text-sub: #64748b;
-            --banker-red: #ef4444;
-            --player-blue: #3b82f6;
-            --tie-green: #10b981;
-            --pair-gold: #f59e0b;
+            --banker-red: #dc2626;
+            --player-blue: #2563eb;
+            --tie-green: #059669;
+            --pair-gold: #d97706;
         }
 
         body {
@@ -47,6 +47,7 @@
             border: 1px solid var(--border-color);
             border-radius: 6px;
             padding: 8px 10px;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.05);
         }
 
         .status-title { font-size: 11px; color: var(--text-sub); }
@@ -55,12 +56,13 @@
         /* 動態訊號欄 */
         .signal-box {
             background-color: var(--card-bg);
-            border: 2px solid #334155;
+            border: 2px solid #94a3b8;
             border-radius: 8px;
             padding: 12px;
             text-align: center;
             font-weight: bold;
             font-size: 15px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
         }
 
         /* 核心算牌數據看板 */
@@ -76,25 +78,58 @@
             border-radius: 6px;
             padding: 8px;
             text-align: center;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.05);
         }
 
         .card-title { font-size: 11px; color: var(--text-sub); }
         .card-value { font-size: 16px; font-weight: bold; margin: 2px 0; }
         .card-ev { font-size: 10px; color: var(--text-sub); }
 
-        /* 手動按鈕輸入區 */
+        /* 莊閒獨立選擇與按鈕區 */
         .input-section {
             background-color: var(--card-bg);
             border: 1px solid var(--border-color);
             border-radius: 8px;
             padding: 10px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
         }
 
-        .current-hand {
+        .side-selector {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 8px;
+        }
+
+        .side-btn {
+            flex: 1;
+            padding: 8px;
+            border-radius: 6px;
+            border: 2px solid var(--border-color);
+            background-color: #f8fafc;
+            color: var(--text-main);
+            font-weight: bold;
+            cursor: pointer;
+            text-align: center;
+        }
+
+        .side-btn.active-player {
+            border-color: var(--player-blue);
+            background-color: #eff6ff;
+            color: var(--player-blue);
+        }
+
+        .side-btn.active-banker {
+            border-color: var(--banker-red);
+            background-color: #fef2f2;
+            color: var(--banker-red);
+        }
+
+        .display-hand {
             display: flex;
             justify-content: space-between;
-            background: #060d1e;
-            padding: 6px 10px;
+            background: #f8fafc;
+            border: 1px solid var(--border-color);
+            padding: 8px 12px;
             border-radius: 4px;
             font-size: 12px;
             margin-bottom: 8px;
@@ -107,9 +142,9 @@
         }
 
         .btn-card {
-            background-color: #1e2d54;
+            background-color: #f1f5f9;
             color: var(--text-main);
-            border: 1px solid #2d4278;
+            border: 1px solid #cbd5e1;
             padding: 10px 0;
             border-radius: 4px;
             font-size: 14px;
@@ -118,7 +153,7 @@
             touch-action: manipulation;
         }
 
-        .btn-card:active { background-color: #3b82f6; }
+        .btn-card:active { background-color: #cbd5e1; }
 
         .action-btns {
             display: grid;
@@ -139,7 +174,7 @@
         .btn-submit { background-color: var(--player-blue); color: white; }
         .btn-reset { background-color: var(--banker-red); color: white; }
 
-        /* 審計日誌與歷史紀錄 Split View */
+        /* 歷史紀錄與 Log */
         .audit-grid {
             display: grid;
             grid-template-columns: 2fr 1fr;
@@ -158,6 +193,7 @@
             padding: 10px;
             max-height: 250px;
             overflow-y: auto;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
         }
 
         .panel-title {
@@ -169,7 +205,6 @@
             justify-content: space-between;
         }
 
-        /* 歷史表格 */
         table.history-table {
             width: 100%;
             border-collapse: collapse;
@@ -185,15 +220,15 @@
 
         table.history-table td {
             padding: 4px;
-            border-bottom: 1px solid #162244;
+            border-bottom: 1px solid #f1f5f9;
         }
 
-        /* 系統 Terminal Log */
         .sys-log {
             font-family: monospace;
             font-size: 10px;
-            color: #10b981;
-            background: #030712;
+            color: #047857;
+            background: #f8fafc;
+            border: 1px solid var(--border-color);
             padding: 8px;
             border-radius: 4px;
             height: 180px;
@@ -215,7 +250,7 @@
             <div id="shoe-hand-info" class="status-val">靴 1 / #0</div>
         </div>
         <div class="status-card">
-            <div class="status-title">當前 RC (流水高低數)</div>
+            <div class="status-title">當前 RC (流水數)</div>
             <div id="rc-val" class="status-val" style="color:var(--pair-gold);">0</div>
         </div>
         <div class="status-card">
@@ -261,12 +296,22 @@
         </div>
     </div>
 
-    <!-- 13 軌手動輸入按鈕區 -->
+    <!-- 莊閒獨立選擇與按鈕區 -->
     <div class="input-section">
-        <div class="current-hand">
-            <span>本局輸入牌面：<span id="temp-cards" style="color: var(--pair-gold); font-weight:bold;">無</span></span>
-            <span id="temp-count">已選 0 張</span>
+        <div class="side-selector">
+            <div id="btn-target-player" class="side-btn active-player" onclick="selectSide('P')">
+                🔵 輸入閒家牌 (已選 <span id="cnt-p">0</span> 張)
+            </div>
+            <div id="btn-target-banker" class="side-btn" onclick="selectSide('B')">
+                🔴 輸入莊家牌 (已選 <span id="cnt-b">0</span> 張)
+            </div>
         </div>
+
+        <div class="display-hand">
+            <div>🔵 閒牌: <span id="cards-p" style="color: var(--player-blue); font-weight:bold;">無</span></div>
+            <div>🔴 莊牌: <span id="cards-b" style="color: var(--banker-red); font-weight:bold;">無</span></div>
+        </div>
+
         <div class="btn-grid">
             <button class="btn-card" onclick="addCard('A')">A</button>
             <button class="btn-card" onclick="addCard('2')">2</button>
@@ -281,8 +326,9 @@
             <button class="btn-card" onclick="addCard('J')">J</button>
             <button class="btn-card" onclick="addCard('Q')">Q</button>
             <button class="btn-card" onclick="addCard('K')">K</button>
-            <button class="btn-card" style="background:#dc2626;" onclick="popCard()">⌫</button>
+            <button class="btn-card" style="background:#fee2e2; color:#dc2626; border-color:#fca5a5;" onclick="popCard()">⌫</button>
         </div>
+
         <div class="action-btns">
             <button class="btn-action btn-submit" onclick="submitHand()">完成本局並結算</button>
             <button class="btn-action btn-reset" onclick="resetShoe()">重置新牌靴 (8副)</button>
@@ -301,21 +347,19 @@
                     <tr>
                         <th>局號</th>
                         <th>牌面點數</th>
-                        <th>開牌點數</th>
+                        <th>開牌結果</th>
                         <th>RC 變動</th>
                         <th>推薦策略</th>
                     </tr>
                 </thead>
-                <tbody id="history-tbody">
-                    <!-- 動態寫入歷史紀錄 -->
-                </tbody>
+                <tbody id="history-tbody"></tbody>
             </table>
         </div>
 
         <div class="panel">
             <div class="panel-title">SYSTEM LOG (運算日誌)</div>
             <div id="sys-log" class="sys-log">
-                <div class="log-item"><span class="log-time">[系統啟動]</span> 13 軌算牌模型就緒...</div>
+                <div class="log-item"><span class="log-time">[系統啟動]</span> 淺色版 13 軌儀表板已就緒...</div>
             </div>
         </div>
     </div>
@@ -329,33 +373,69 @@
     };
 
     let deck13 = { ...INITIAL_DECK };
-    let tempHand = [];
+    let currentSide = 'P';
+    let pHand = [];
+    let bHand = [];
     let handCount = 0;
     let currentRC = 0;
     let winCount = 0, lossCount = 0, tieCount = 0, skipCount = 0;
     let lastRecommendation = '觀望/跳過';
 
+    function selectSide(side) {
+        currentSide = side;
+        const btnP = document.getElementById('btn-target-player');
+        const btnB = document.getElementById('btn-target-banker');
+
+        if (side === 'P') {
+            btnP.classList.add('active-player');
+            btnB.classList.remove('active-banker');
+        } else {
+            btnB.classList.add('active-banker');
+            btnP.classList.remove('active-player');
+        }
+    }
+
     function addCard(rank) {
-        if (tempHand.length >= 6) return;
+        let targetHand = currentSide === 'P' ? pHand : bHand;
+        if (targetHand.length >= 3) {
+            alert(`單邊最多只能輸入 3 張牌`);
+            return;
+        }
         if (deck13[rank] <= 0) {
             alert(`牌庫中已無點數 ${rank}`);
             return;
         }
-        tempHand.push(rank);
+        targetHand.push(rank);
         deck13[rank]--;
-        updateTempUI();
+        
+        if (currentSide === 'P' && pHand.length === 2 && bHand.length === 0) {
+            selectSide('B');
+        }
+
+        updateHandUI();
     }
 
     function popCard() {
-        if (tempHand.length === 0) return;
-        let last = tempHand.pop();
-        deck13[last]++;
-        updateTempUI();
+        let targetHand = currentSide === 'P' ? pHand : bHand;
+        if (targetHand.length > 0) {
+            let last = targetHand.pop();
+            deck13[last]++;
+        } else {
+            let otherHand = currentSide === 'P' ? bHand : pHand;
+            if (otherHand.length > 0) {
+                selectSide(currentSide === 'P' ? 'B' : 'P');
+                let last = otherHand.pop();
+                deck13[last]++;
+            }
+        }
+        updateHandUI();
     }
 
-    function updateTempUI() {
-        document.getElementById('temp-cards').innerText = tempHand.length > 0 ? tempHand.join(', ') : '無';
-        document.getElementById('temp-count').innerText = `已選 ${tempHand.length} 張`;
+    function updateHandUI() {
+        document.getElementById('cards-p').innerText = pHand.length > 0 ? pHand.join(', ') : '無';
+        document.getElementById('cards-b').innerText = bHand.length > 0 ? bHand.join(', ') : '無';
+        document.getElementById('cnt-p').innerText = pHand.length;
+        document.getElementById('cnt-b').innerText = bHand.length;
     }
 
     function getTimeStr() {
@@ -370,57 +450,52 @@
     }
 
     function submitHand() {
-        if (tempHand.length < 4) {
-            alert('一局至少需要輸入 4 張牌（如：閒 2 張、莊 2 張）');
+        if (pHand.length < 2 || bHand.length < 2) {
+            alert('閒家與莊家必須各至少輸入 2 張牌！');
             return;
         }
 
         handCount++;
         let prevRC = currentRC;
+        let allHand = [...pHand, ...bHand];
 
-        // 計算 RC (High-Low Count: 2-6為+1, 10-K/A為-1)
-        tempHand.forEach(card => {
+        allHand.forEach(card => {
             if (['2','3','4','5','6'].includes(card)) currentRC++;
             else if (['10','J','Q','K','A'].includes(card)) currentRC--;
         });
-
-        // 計算當局點數 (假設前一半為閒，後一半為莊)
-        let mid = Math.ceil(tempHand.length / 2);
-        let pCards = tempHand.slice(0, mid);
-        let bCards = tempHand.slice(mid);
 
         let getVal = cards => cards.reduce((acc, c) => {
             let v = (['10','J','Q','K'].includes(c)) ? 0 : (c === 'A' ? 1 : parseInt(c));
             return (acc + v) % 10;
         }, 0);
 
-        let pVal = getVal(pCards);
-        let bVal = getVal(bCards);
+        let pVal = getVal(pHand);
+        let bVal = getVal(bHand);
         let resultStr = pVal > bVal ? '閒勝' : (bVal > pVal ? '莊勝' : '和局');
 
-        // 戰績統計
         if (lastRecommendation.includes('莊') && bVal > pVal) winCount++;
         else if (lastRecommendation.includes('閒') && pVal > bVal) winCount++;
         else if (lastRecommendation.includes('跳過') || lastRecommendation.includes('觀望')) skipCount++;
         else if (pVal === bVal) tieCount++;
         else lossCount++;
 
-        // 寫入 Audit Trail 歷史表
         const tbody = document.getElementById('history-tbody');
         const row = document.createElement('tr');
         row.innerHTML = `
             <td>#${handCount}</td>
-            <td>閒:${pCards.join('')} 莊:${bCards.join('')}</td>
-            <td>閒${pVal}:${bVal}莊 (${resultStr})</td>
+            <td>閒:[${pHand.join('')}] 莊:[${bHand.join('')}]</td>
+            <td>閒${pVal} : ${bVal}莊 (${resultStr})</td>
             <td>${prevRC} → ${currentRC}</td>
             <td>${lastRecommendation}</td>
         `;
         tbody.insertBefore(row, tbody.firstChild);
 
-        addLog(`第 ${handCount} 局完成: 牌面=[${tempHand.join(',')}], RC:${prevRC}→${currentRC}`);
+        addLog(`第 ${handCount} 局: 閒[${pHand.join('')}] vs 莊[${bHand.join('')}] => ${resultStr}`);
 
-        tempHand = [];
-        updateTempUI();
+        pHand = [];
+        bHand = [];
+        selectSide('P');
+        updateHandUI();
         calculateAdvancedEV();
         updateStats();
     }
@@ -428,13 +503,15 @@
     function resetShoe() {
         if (confirm('確定要重置為 8 副新牌靴嗎？')) {
             deck13 = { ...INITIAL_DECK };
-            tempHand = [];
+            pHand = [];
+            bHand = [];
             handCount = 0;
             currentRC = 0;
             winCount = 0; lossCount = 0; tieCount = 0; skipCount = 0;
             document.getElementById('history-tbody').innerHTML = '';
             addLog('重置牌靴：8 副牌 (416張) 初始化完畢');
-            updateTempUI();
+            selectSide('P');
+            updateHandUI();
             calculateAdvancedEV();
             updateStats();
         }
@@ -464,7 +541,6 @@
             return;
         }
 
-        // 1. 精確計算對子概率與 EV
         let pairCombos = 0;
         for (let rank in deck13) {
             let c = deck13[rank];
@@ -473,7 +549,6 @@
         const pPair = pairCombos / (N * (N - 1));
         const evPair = (12 * pPair) - 1;
 
-        // 2. 點數矩陣計算莊/閒/和 EV
         let c0 = deck13['10'] + deck13['J'] + deck13['Q'] + deck13['K'];
         let d = {
             0: c0, 1: deck13['A'], 2: deck13['2'], 3: deck13['3'], 4: deck13['4'],
@@ -499,7 +574,6 @@
         const evP = (pP * 1.0) - (1 - pP - pT);
         const evT = (pT * 8.0) - (1 - pT);
 
-        // UI 渲染
         document.getElementById('val-b').innerText = (pB * 100).toFixed(2) + '%';
         document.getElementById('val-p').innerText = (pP * 100).toFixed(2) + '%';
         document.getElementById('val-pair').innerText = (pPair * 100).toFixed(2) + '%';
@@ -510,26 +584,25 @@
         document.getElementById('ev-pair').innerText = `EV: ${(evPair * 100).toFixed(2)}%`;
         document.getElementById('ev-t').innerText = `EV: ${(evT * 100).toFixed(2)}%`;
 
-        // 安全門檻過濾
-        const T_MAIN = 0.0025; // 主注 EV > +0.25%
-        const T_PAIR = 0.0120; // 對子 EV > +1.20%
+        const T_MAIN = 0.0025;
+        const T_PAIR = 0.0120;
 
         let signals = [];
-        let boxColor = '#334155';
+        let boxColor = '#94a3b8';
         lastRecommendation = '觀望/跳過';
 
         if (evPair > T_PAIR) {
-            signals.push(`<span style="color:#f59e0b;">🔥 下局推薦【莊對 & 閒對】</span>`);
-            boxColor = '#f59e0b';
+            signals.push(`<span style="color:#d97706;">🔥 下局推薦【莊對 & 閒對】</span>`);
+            boxColor = '#d97706';
             lastRecommendation = '下注【對子】';
         }
         if (evB > T_MAIN) {
-            signals.push(`<span style="color:#f87171;">🔴 下局推薦【莊家】</span>`);
-            boxColor = '#ef4444';
+            signals.push(`<span style="color:#dc2626;">🔴 下局推薦【莊家】</span>`);
+            boxColor = '#dc2626';
             lastRecommendation = '下注【莊家】';
         } else if (evP > T_MAIN) {
-            signals.push(`<span style="color:#60a5fa;">🔵 下局推薦【閒家】</span>`);
-            boxColor = '#3b82f6';
+            signals.push(`<span style="color:#2563eb;">🔵 下局推薦【閒家】</span>`);
+            boxColor = '#2563eb';
             lastRecommendation = '下注【閒家】';
         }
 
