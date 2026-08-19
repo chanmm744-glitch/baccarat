@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>百家樂專業級 13 軌戰術儀表板 (淺色版)</title>
+    <title>百家樂專業級 13 軌戰術儀表板 (進階版)</title>
     <style>
         :root {
             --bg-color: #f1f5f9;
@@ -38,7 +38,7 @@
         /* 頂部狀態橫條 */
         .status-bar {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
             gap: 8px;
         }
 
@@ -63,6 +63,26 @@
             font-weight: bold;
             font-size: 15px;
             box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        }
+
+        /* 資金管理列 */
+        .bankroll-bar {
+            background-color: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            padding: 8px 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 12px;
+        }
+
+        .bankroll-input {
+            width: 80px;
+            padding: 4px;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            font-weight: bold;
         }
 
         /* 核心算牌數據看板 */
@@ -157,7 +177,7 @@
 
         .action-btns {
             display: grid;
-            grid-template-columns: 1fr 1fr;
+            grid-template-columns: 2fr 1fr 1fr;
             gap: 8px;
             margin-top: 8px;
         }
@@ -172,6 +192,7 @@
         }
 
         .btn-submit { background-color: var(--player-blue); color: white; }
+        .btn-undo { background-color: #d97706; color: white; }
         .btn-reset { background-color: var(--banker-red); color: white; }
 
         /* 歷史紀錄與 Log */
@@ -250,21 +271,27 @@
             <div id="shoe-hand-info" class="status-val">靴 1 / #0</div>
         </div>
         <div class="status-card">
-            <div class="status-title">當前 RC (流水數)</div>
+            <div class="status-title">流水數 (RC)</div>
             <div id="rc-val" class="status-val" style="color:var(--pair-gold);">0</div>
+        </div>
+        <div class="status-card">
+            <div class="status-title">真數 (TC)</div>
+            <div id="tc-val" class="status-val" style="color:#2563eb;">0.00</div>
         </div>
         <div class="status-card">
             <div class="status-title">戰績 (勝/負/和/跳過)</div>
             <div id="win-loss-stats" class="status-val" style="font-size:13px;">0 / 0 / 0 / 0</div>
         </div>
         <div class="status-card">
-            <div class="status-title">命中率</div>
-            <div id="accuracy-val" class="status-val">0.00%</div>
-        </div>
-        <div class="status-card">
             <div class="status-title">牌庫剩餘</div>
-            <div id="total-cards" class="status-val">416 張 (100%)</div>
+            <div id="total-cards" class="status-val">416 張</div>
         </div>
+    </div>
+
+    <!-- 資金管理區塊 -->
+    <div class="bankroll-bar">
+        <div>💰 總資金庫存: $<input type="number" id="bankroll-input" class="bankroll-input" value="10000" step="1000"></div>
+        <div id="kelly-advice" style="font-weight:bold; color:var(--text-sub);">下注建議: 觀望 (無正 EV)</div>
     </div>
 
     <!-- 動態推薦訊號 -->
@@ -331,7 +358,8 @@
 
         <div class="action-btns">
             <button class="btn-action btn-submit" onclick="submitHand()">完成本局並結算</button>
-            <button class="btn-action btn-reset" onclick="resetShoe()">重置新牌靴 (8副)</button>
+            <button class="btn-action btn-undo" onclick="undoLastHand()">↺ 撤銷上局</button>
+            <button class="btn-action btn-reset" onclick="resetShoe()">重置牌靴</button>
         </div>
     </div>
 
@@ -348,7 +376,7 @@
                         <th>局號</th>
                         <th>牌面點數</th>
                         <th>開牌結果</th>
-                        <th>RC 變動</th>
+                        <th>RC / TC</th>
                         <th>推薦策略</th>
                     </tr>
                 </thead>
@@ -359,7 +387,7 @@
         <div class="panel">
             <div class="panel-title">SYSTEM LOG (運算日誌)</div>
             <div id="sys-log" class="sys-log">
-                <div class="log-item"><span class="log-time">[系統啟動]</span> 淺色版 13 軌儀表板已就緒...</div>
+                <div class="log-item"><span class="log-time">[系統啟動]</span> 13 軌進階戰術儀表板已就緒...</div>
             </div>
         </div>
     </div>
@@ -373,6 +401,7 @@
     };
 
     let deck13 = { ...INITIAL_DECK };
+    let historyStack = []; // 用於 Undo 一鍵撤銷
     let currentSide = 'P';
     let pHand = [];
     let bHand = [];
@@ -380,6 +409,18 @@
     let currentRC = 0;
     let winCount = 0, lossCount = 0, tieCount = 0, skipCount = 0;
     let lastRecommendation = '觀望/跳過';
+
+    function speakText(text) {
+        if ('speechSynthesis' in window) {
+            let msg = new SpeechSynthesisUtterance(text);
+            msg.lang = 'zh-TW';
+            window.speechSynthesis.speak(msg);
+        }
+    }
+
+    function triggerAlert() {
+        if (navigator.vibrate) navigator.vibrate([200, 100, 200]);
+    }
 
     function selectSide(side) {
         currentSide = side;
@@ -455,6 +496,20 @@
             return;
         }
 
+        // 保存狀態以供 Undo
+        historyStack.push({
+            pHand: [...pHand],
+            bHand: [...bHand],
+            deck13Snap: { ...deck13 },
+            rcSnap: currentRC,
+            handCountSnap: handCount,
+            lastRecSnap: lastRecommendation,
+            winCountSnap: winCount,
+            lossCountSnap: lossCount,
+            tieCountSnap: tieCount,
+            skipCountSnap: skipCount
+        });
+
         handCount++;
         let prevRC = currentRC;
         let allHand = [...pHand, ...bHand];
@@ -479,13 +534,17 @@
         else if (pVal === bVal) tieCount++;
         else lossCount++;
 
+        let N = 0; for (let r in deck13) { N += deck13[r]; }
+        let currentTC = ((N / 52) > 0) ? (currentRC / (N / 52)).toFixed(2) : 0;
+
         const tbody = document.getElementById('history-tbody');
         const row = document.createElement('tr');
+        row.setAttribute('id', `hand-row-${handCount}`);
         row.innerHTML = `
             <td>#${handCount}</td>
             <td>閒:[${pHand.join('')}] 莊:[${bHand.join('')}]</td>
             <td>閒${pVal} : ${bVal}莊 (${resultStr})</td>
-            <td>${prevRC} → ${currentRC}</td>
+            <td>${currentRC} / ${currentTC}</td>
             <td>${lastRecommendation}</td>
         `;
         tbody.insertBefore(row, tbody.firstChild);
@@ -500,9 +559,39 @@
         updateStats();
     }
 
+    function undoLastHand() {
+        if (historyStack.length === 0) {
+            alert('沒有可以撤銷的局數！');
+            return;
+        }
+
+        let lastState = historyStack.pop();
+        deck13 = { ...lastState.deck13Snap };
+        currentRC = lastState.rcSnap;
+        handCount = lastState.handCountSnap;
+        lastRecommendation = lastState.lastRecSnap;
+        winCount = lastState.winCountSnap;
+        lossCount = lastState.lossCountSnap;
+        tieCount = lastState.tieCountSnap;
+        skipCount = lastState.skipCountSnap;
+
+        // 移除畫面上最後一筆紀錄
+        const tbody = document.getElementById('history-tbody');
+        if (tbody.firstChild) tbody.removeChild(tbody.firstChild);
+
+        pHand = [];
+        bHand = [];
+        selectSide('P');
+        updateHandUI();
+        calculateAdvancedEV();
+        updateStats();
+        addLog(`↺ 已撤銷第 ${handCount + 1} 局資料，狀態還原完畢`);
+    }
+
     function resetShoe() {
         if (confirm('確定要重置為 8 副新牌靴嗎？')) {
             deck13 = { ...INITIAL_DECK };
+            historyStack = [];
             pHand = [];
             bHand = [];
             handCount = 0;
@@ -518,13 +607,14 @@
     }
 
     function updateStats() {
+        let N = 0; for (let r in deck13) { N += deck13[r]; }
+        let remainingDecks = N / 52;
+        let tc = remainingDecks > 0 ? (currentRC / remainingDecks).toFixed(2) : 0;
+
         document.getElementById('shoe-hand-info').innerText = `靴 1 / #${handCount}`;
         document.getElementById('rc-val').innerText = currentRC;
+        document.getElementById('tc-val').innerText = tc;
         document.getElementById('win-loss-stats').innerText = `${winCount} / ${lossCount} / ${tieCount} / ${skipCount}`;
-        
-        let totalBet = winCount + lossCount;
-        let acc = totalBet > 0 ? ((winCount / totalBet) * 100).toFixed(2) + '%' : '0.00%';
-        document.getElementById('accuracy-val').innerText = acc;
         document.getElementById('history-count').innerText = `${handCount} 局`;
     }
 
@@ -584,27 +674,43 @@
         document.getElementById('ev-pair').innerText = `EV: ${(evPair * 100).toFixed(2)}%`;
         document.getElementById('ev-t').innerText = `EV: ${(evT * 100).toFixed(2)}%`;
 
-        const T_MAIN = 0.0025;
-        const T_PAIR = 0.0120;
+        // 資金與凱利計算
+        let bankroll = parseFloat(document.getElementById('bankroll-input').value) || 10000;
+        let kellyAdviceText = '下注建議: 觀望 (無正 EV)';
+
+        const T_MAIN = 0.0015; // 觸發門檻
+        const T_PAIR = 0.0100;
 
         let signals = [];
         let boxColor = '#94a3b8';
         lastRecommendation = '觀望/跳過';
 
         if (evPair > T_PAIR) {
-            signals.push(`<span style="color:#d97706;">🔥 下局推薦【莊對 & 閒對】</span>`);
+            signals.push(`<span style="color:#d97706;">🔥 推薦【對子】</span>`);
             boxColor = '#d97706';
             lastRecommendation = '下注【對子】';
+            let kFraction = (pPair * 12 - 1) / 11;
+            let betAmt = Math.max(0, Math.floor(bankroll * kFraction * 0.25));
+            kellyAdviceText = `下注建議: 🔥 對子 $${betAmt}`;
         }
+
         if (evB > T_MAIN) {
-            signals.push(`<span style="color:#dc2626;">🔴 下局推薦【莊家】</span>`);
+            signals.push(`<span style="color:#dc2626;">🔴 推薦【莊家】</span>`);
             boxColor = '#dc2626';
             lastRecommendation = '下注【莊家】';
+            let kFraction = (pB * 1.95 - 1) / 0.95;
+            let betAmt = Math.max(0, Math.floor(bankroll * kFraction * 0.25));
+            kellyAdviceText = `下注建議: 🔴 莊家 $${betAmt}`;
         } else if (evP > T_MAIN) {
-            signals.push(`<span style="color:#2563eb;">🔵 下局推薦【閒家】</span>`);
+            signals.push(`<span style="color:#2563eb;">🔵 推薦【閒家】</span>`);
             boxColor = '#2563eb';
             lastRecommendation = '下注【閒家】';
+            let kFraction = (pP * 2.0 - 1);
+            let betAmt = Math.max(0, Math.floor(bankroll * kFraction * 0.25));
+            kellyAdviceText = `下注建議: 🔵 閒家 $${betAmt}`;
         }
+
+        document.getElementById('kelly-advice').innerText = kellyAdviceText;
 
         const signalBox = document.getElementById('signal-box');
         const signalText = document.getElementById('signal-text');
@@ -613,6 +719,8 @@
         if (signals.length > 0) {
             signalText.innerHTML = signals.join(' | ');
             addLog(`訊號觸發: ${lastRecommendation}`);
+            triggerAlert();
+            speakText(lastRecommendation.replace('下注', '推薦'));
         } else {
             signalText.innerText = `剩餘 ${N} 張 | 未達安全門檻，建議觀望`;
         }
