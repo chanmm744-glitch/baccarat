@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="ReaderView" content="no-reader">
     <title>百家樂按局算牌戰術板</title>
-    <!-- 強制防止 Safari 將其識別為文章文章頁面 -->
     <style>
         body { background-color: #0f172a !important; color: #f8fafc !important; font-family: -apple-system, sans-serif; padding: 16px; margin: 0; min-height: 100vh; }
         .container { max-width: 900px; margin: 0 auto; display: flex; flex-direction: column; gap: 16px; }
@@ -24,17 +23,22 @@
         .zone-player { border: 2px solid #1e3a8a; background-color: rgba(15, 23, 42, 0.6); }
         .zone-banker { border: 2px solid #831843; background-color: rgba(15, 23, 42, 0.6); }
         .zone-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; padding-bottom: 6px; border-bottom: 1px solid #334155; }
-        .hand-display { background-color: #0f172a; border: 1px dashed #475569; border-radius: 8px; padding: 8px; min-height: 40px; display: flex; align-items: center; margin-bottom: 12px; }
+        .hand-display { background-color: #0f172a; border: 1px dashed #475569; border-radius: 8px; padding: 8px 12px; min-height: 44px; display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
         .cards-list { display: flex; gap: 6px; font-family: monospace; font-weight: bold; font-size: 16px; }
         .card-tag { background-color: #334155; padding: 2px 8px; border-radius: 4px; }
+        .score-badge { font-size: 14px; font-weight: bold; padding: 2px 8px; border-radius: 4px; background-color: #334155; color: #f8fafc; }
         .card-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; }
         .card-btn { height: 44px; background-color: #334155; color: #ffffff; border: 1px solid #475569; border-radius: 8px; font-size: 13px; font-weight: bold; cursor: pointer; }
         .prob-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 8px; }
         .prob-card { background-color: #0f172a; padding: 12px; border-radius: 8px; border: 1px solid #1e293b; text-align: center; }
         .prob-val { font-size: 15px; font-weight: bold; font-family: monospace; color: #e2e8f0; margin: 4px 0; }
         .ev-val { font-size: 11px; font-family: monospace; color: #64748b; }
-        .history-list { display: flex; flex-direction: column; gap: 8px; max-height: 180px; overflow-y: auto; margin-top: 8px; font-size: 13px; font-family: monospace; }
-        .history-row { display: flex; justify-content: space-between; background-color: #0f172a; padding: 6px 12px; border-radius: 6px; border: 1px solid #1e293b; }
+        .history-list { display: flex; flex-direction: column; gap: 8px; max-height: 200px; overflow-y: auto; margin-top: 8px; font-size: 13px; font-family: monospace; }
+        .history-row { display: flex; justify-content: space-between; align-items: center; background-color: #0f172a; padding: 8px 12px; border-radius: 6px; border: 1px solid #1e293b; }
+        .winner-tag { font-weight: bold; padding: 2px 6px; border-radius: 4px; font-size: 12px; }
+        .tag-p { background-color: #1e3a8a; color: #60a5fa; }
+        .tag-b { background-color: #831843; color: #f87171; }
+        .tag-t { background-color: #064e3b; color: #34d399; }
     </style>
 </head>
 <body>
@@ -56,13 +60,15 @@
         </div>
 
         <div class="round-input-container">
+            <!-- 閒家 -->
             <div class="card zone-player">
                 <div class="zone-header">
-                    <span style="color: #60a5fa; font-size: 14px; font-weight: bold;">🔵 閒家 (Player) 本局牌面</span>
+                    <span style="color: #60a5fa; font-size: 14px; font-weight: bold;">🔵 閒家 (Player)</span>
                     <button onclick="clearCurrentHand('P')" style="background:none; border:none; color:#94a3b8; cursor:pointer; font-size:11px;">清空閒牌</button>
                 </div>
                 <div class="hand-display">
-                    <div id="p-cards-list" class="cards-list"><span style="color:#64748b; font-size:12px; font-weight:normal;">請按點數錄入</span></div>
+                    <div id="p-cards-list" class="cards-list"><span style="color:#64748b; font-size:12px;">點擊數字錄入</span></div>
+                    <div id="p-score" class="score-badge">0 點</div>
                 </div>
                 <div class="card-grid">
                     <button class="card-btn" onclick="addCurrentCard('P', 1)">A</button>
@@ -78,13 +84,15 @@
                 </div>
             </div>
 
+            <!-- 莊家 -->
             <div class="card zone-banker">
                 <div class="zone-header">
-                    <span style="color: #f87171; font-size: 14px; font-weight: bold;">🔴 莊家 (Banker) 本局牌面</span>
+                    <span style="color: #f87171; font-size: 14px; font-weight: bold;">🔴 莊家 (Banker)</span>
                     <button onclick="clearCurrentHand('B')" style="background:none; border:none; color:#94a3b8; cursor:pointer; font-size:11px;">清空莊牌</button>
                 </div>
                 <div class="hand-display">
-                    <div id="b-cards-list" class="cards-list"><span style="color:#64748b; font-size:12px; font-weight:normal;">請按點數錄入</span></div>
+                    <div id="b-cards-list" class="cards-list"><span style="color:#64748b; font-size:12px;">點擊數字錄入</span></div>
+                    <div id="b-score" class="score-badge">0 點</div>
                 </div>
                 <div class="card-grid">
                     <button class="card-btn" onclick="addCurrentCard('B', 1)">A</button>
@@ -140,12 +148,19 @@
         let currentHandP = [];
         let currentHandB = [];
 
+        // 計算點數公式 (累加取餘 10)
+        function calcPoints(cards) {
+            if (cards.length === 0) return 0;
+            const sum = cards.reduce((acc, val) => acc + val, 0);
+            return sum % 10;
+        }
+
         function addCurrentCard(target, val) {
             if (target === 'P') {
-                if (currentHandP.length >= 3) return alert('閒家最多錄入 3 張牌');
+                if (currentHandP.length >= 3) return alert('閒家最多 3 張牌');
                 currentHandP.push(val);
             } else {
-                if (currentHandB.length >= 3) return alert('莊家最多錄入 3 張牌');
+                if (currentHandB.length >= 3) return alert('莊家最多 3 張牌');
                 currentHandB.push(val);
             }
             renderCurrentHand();
@@ -160,8 +175,14 @@
         function renderCurrentHand() {
             const pEl = document.getElementById('p-cards-list');
             const bEl = document.getElementById('b-cards-list');
-            pEl.innerHTML = currentHandP.length === 0 ? '<span style="color:#64748b; font-size:12px;">請按點數錄入</span>' : currentHandP.map(v => `<span class="card-tag" style="color:#60a5fa">${v === 0 ? 'K/10' : v}</span>`).join('');
-            bEl.innerHTML = currentHandB.length === 0 ? '<span style="color:#64748b; font-size:12px;">請按點數錄入</span>' : currentHandB.map(v => `<span class="card-tag" style="color:#f87171">${v === 0 ? 'K/10' : v}</span>`).join('');
+            const pScoreEl = document.getElementById('p-score');
+            const bScoreEl = document.getElementById('b-score');
+
+            pEl.innerHTML = currentHandP.length === 0 ? '<span style="color:#64748b; font-size:12px;">點擊數字錄入</span>' : currentHandP.map(v => `<span class="card-tag" style="color:#60a5fa">${v === 0 ? '10/K' : v}</span>`).join('');
+            bEl.innerHTML = currentHandB.length === 0 ? '<span style="color:#64748b; font-size:12px;">點擊數字錄入</span>' : currentHandB.map(v => `<span class="card-tag" style="color:#f87171">${v === 0 ? '10/K' : v}</span>`).join('');
+
+            pScoreEl.innerText = `${calcPoints(currentHandP)} 點`;
+            bScoreEl.innerText = `${calcPoints(currentHandB)} 點`;
         }
 
         function submitRound() {
@@ -169,7 +190,23 @@
             const allCards = [...currentHandP, ...currentHandB];
             for (let v of allCards) { if (deck[v] <= 0) return alert(`點數 ${v === 0 ? '10/K' : v} 已耗盡！`); }
             for (let v of allCards) { deck[v]--; totalCards--; }
-            roundHistory.push({ round: roundHistory.length + 1, p: [...currentHandP], b: [...currentHandB] });
+
+            const pScore = calcPoints(currentHandP);
+            const bScore = calcPoints(currentHandB);
+            
+            let winner = '和';
+            if (pScore > bScore) winner = '閒';
+            else if (bScore > pScore) winner = '莊';
+
+            roundHistory.push({
+                round: roundHistory.length + 1,
+                p: [...currentHandP],
+                b: [...currentHandB],
+                pScore,
+                bScore,
+                winner
+            });
+
             currentHandP = []; currentHandB = [];
             renderCurrentHand();
             updateDashboard();
@@ -192,13 +229,21 @@
             document.getElementById('total-cards').innerText = totalCards;
             document.getElementById('round-num').innerText = roundHistory.length + 1;
             const histEl = document.getElementById('history-container');
-            histEl.innerHTML = roundHistory.length === 0 ? '<span style="color:#64748b; font-style:italic;">尚無牌局歷史資料</span>' : roundHistory.slice().reverse().map(item => `
-                <div class="history-row">
-                    <span>第 ${item.round} 局</span>
-                    <span><span style="color:#60a5fa">閒:</span> [${item.p.map(v => v === 0 ? '10/K' : v).join(', ') || '無'}]</span>
-                    <span><span style="color:#f87171">莊:</span> [${item.b.map(v => v === 0 ? '10/K' : v).join(', ') || '無'}]</span>
-                </div>
-            `).join('');
+
+            histEl.innerHTML = roundHistory.length === 0 ? '<span style="color:#64748b; font-style:italic;">尚無牌局歷史資料</span>' : roundHistory.slice().reverse().map(item => {
+                let tagClass = 'tag-t';
+                if (item.winner === '閒') tagClass = 'tag-p';
+                if (item.winner === '莊') tagClass = 'tag-b';
+
+                return `
+                    <div class="history-row">
+                        <span>第 ${item.round} 局</span>
+                        <span><span style="color:#60a5fa">閒:</span> ${item.pScore}點 [${item.p.map(v => v === 0 ? '10/K' : v).join(',') || '無'}]</span>
+                        <span><span style="color:#f87171">莊:</span> ${item.bScore}點 [${item.b.map(v => v === 0 ? '10/K' : v).join(',') || '無'}]</span>
+                        <span class="winner-tag ${tagClass}">${item.winner}勝</span>
+                    </div>
+                `;
+            }).join('');
             calculateExactCombinatorics();
         }
 
