@@ -2,295 +2,397 @@
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <meta name="ReaderView" content="no-reader">
-    <title>百家樂按局算牌戰術板</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>百家樂 13 軌動態算牌戰術板</title>
     <style>
-        body { background-color: #0f172a !important; color: #f8fafc !important; font-family: -apple-system, sans-serif; padding: 16px; margin: 0; min-height: 100vh; }
-        .container { max-width: 900px; margin: 0 auto; display: flex; flex-direction: column; gap: 16px; }
-        .card { background-color: #1e293b !important; border: 1px solid #334155; border-radius: 12px; padding: 16px; }
-        .header { display: flex; justify-content: space-between; align-items: center; }
-        .title { font-size: 18px; font-weight: bold; color: #34d399; }
-        .subtitle { font-size: 12px; color: #94a3b8; margin-top: 4px; }
-        .btn-group { display: flex; gap: 8px; }
-        .btn { padding: 6px 12px; border-radius: 8px; font-size: 12px; font-weight: 600; cursor: pointer; border: 1px solid transparent; }
-        .btn-undo { background-color: #334155; color: #f8fafc; }
-        .btn-reset { background-color: #881337; color: #fecdd3; }
-        .btn-submit { background-color: #059669; color: #ffffff; font-size: 15px; padding: 12px 20px; width: 100%; margin-top: 8px; font-weight: bold; border-radius: 8px; border: none; cursor: pointer; }
-        .signal-box { text-align: center; }
-        .round-input-container { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
-        @media (max-width: 640px) { .round-input-container { grid-template-columns: 1fr; } }
-        .zone-player { border: 2px solid #1e3a8a; background-color: rgba(15, 23, 42, 0.6); }
-        .zone-banker { border: 2px solid #831843; background-color: rgba(15, 23, 42, 0.6); }
-        .zone-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; padding-bottom: 6px; border-bottom: 1px solid #334155; }
-        .hand-display { background-color: #0f172a; border: 1px dashed #475569; border-radius: 8px; padding: 8px 12px; min-height: 44px; display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
-        .cards-list { display: flex; gap: 6px; font-family: monospace; font-weight: bold; font-size: 16px; }
-        .card-tag { background-color: #334155; padding: 2px 8px; border-radius: 4px; }
-        .score-badge { font-size: 14px; font-weight: bold; padding: 2px 8px; border-radius: 4px; background-color: #334155; color: #f8fafc; }
-        .card-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; }
-        .card-btn { height: 44px; background-color: #334155; color: #ffffff; border: 1px solid #475569; border-radius: 8px; font-size: 13px; font-weight: bold; cursor: pointer; }
-        .prob-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 8px; }
-        .prob-card { background-color: #0f172a; padding: 12px; border-radius: 8px; border: 1px solid #1e293b; text-align: center; }
-        .prob-val { font-size: 15px; font-weight: bold; font-family: monospace; color: #e2e8f0; margin: 4px 0; }
-        .ev-val { font-size: 11px; font-family: monospace; color: #64748b; }
-        .history-list { display: flex; flex-direction: column; gap: 8px; max-height: 200px; overflow-y: auto; margin-top: 8px; font-size: 13px; font-family: monospace; }
-        .history-row { display: flex; justify-content: space-between; align-items: center; background-color: #0f172a; padding: 8px 12px; border-radius: 6px; border: 1px solid #1e293b; }
-        .winner-tag { font-weight: bold; padding: 2px 6px; border-radius: 4px; font-size: 12px; }
-        .tag-p { background-color: #1e3a8a; color: #60a5fa; }
-        .tag-b { background-color: #831843; color: #f87171; }
-        .tag-t { background-color: #064e3b; color: #34d399; }
+        :root {
+            --bg-color: #0f172a;
+            --card-bg: #1e293b;
+            --text-main: #f8fafc;
+            --text-sub: #94a3b8;
+            --banker-red: #ef4444;
+            --player-blue: #3b82f6;
+            --tie-green: #10b981;
+            --pair-gold: #f59e0b;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            margin: 0;
+            padding: 12px;
+            box-sizing: border-box;
+        }
+
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        /* 頂部動態訊號欄 */
+        .signal-box {
+            background-color: var(--card-bg);
+            border: 2px solid #334155;
+            border-radius: 12px;
+            padding: 14px;
+            text-align: center;
+            font-weight: bold;
+            transition: all 0.3s ease;
+        }
+
+        /* 數據看板 */
+        .dashboard {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 8px;
+        }
+
+        .card {
+            background-color: var(--card-bg);
+            border-radius: 10px;
+            padding: 10px;
+            text-align: center;
+        }
+
+        .card-title {
+            font-size: 12px;
+            color: var(--text-sub);
+            margin-bottom: 4px;
+        }
+
+        .card-value {
+            font-size: 18px;
+            font-weight: bold;
+        }
+
+        /* 13 軌牌庫面板 */
+        .deck-status {
+            background-color: var(--card-bg);
+            border-radius: 10px;
+            padding: 10px;
+        }
+
+        .deck-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 4px;
+            text-align: center;
+            font-size: 12px;
+            margin-top: 6px;
+        }
+
+        .deck-item {
+            background: #334155;
+            padding: 4px 2px;
+            border-radius: 4px;
+        }
+
+        .deck-item div:first-child {
+            color: var(--text-sub);
+            font-size: 10px;
+        }
+
+        /* 輸入按鈕區 */
+        .input-section {
+            background-color: var(--card-bg);
+            border-radius: 10px;
+            padding: 12px;
+        }
+
+        .btn-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 6px;
+            margin-top: 8px;
+        }
+
+        .btn-card {
+            background-color: #334155;
+            color: var(--text-main);
+            border: none;
+            padding: 10px 0;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: bold;
+            cursor: pointer;
+            touch-action: manipulation;
+        }
+
+        .btn-card:active {
+            background-color: #475569;
+            transform: scale(0.95);
+        }
+
+        .action-btns {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-top: 12px;
+        }
+
+        .btn-action {
+            padding: 12px;
+            border-radius: 8px;
+            border: none;
+            font-weight: bold;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        .btn-submit { background-color: var(--player-blue); color: white; }
+        .btn-reset { background-color: #ef4444; color: white; }
+
+        /* 本局暫存點數顯示 */
+        .current-hand {
+            display: flex;
+            justify-content: space-between;
+            background: #020617;
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-size: 13px;
+            margin-bottom: 8px;
+        }
     </style>
 </head>
 <body>
-    <div class="container">
-        <div class="card header">
-            <div>
-                <div class="title">百家樂按局算牌戰術板</div>
-                <div class="subtitle">第 <span id="round-num" style="color:#6ee7b7; font-weight:bold;">1</span> 局 | 剩餘張數：<span id="total-cards" style="color:#6ee7b7; font-family:monospace; font-weight:bold;">416</span> / 416</div>
-            </div>
-            <div class="btn-group">
-                <button onclick="undoLastRound()" class="btn btn-undo">↩ 撤銷上一局</button>
-                <button onclick="resetShoe()" class="btn btn-reset">洗牌重置</button>
-            </div>
-        </div>
 
-        <div id="signal-box" class="card signal-box">
-            <span style="font-size: 12px; color: #94a3b8; display: block; margin-bottom: 4px;">組合分析動態建議</span>
-            <div id="signal-text" style="font-size: 16px; font-weight: bold; color: #cbd5e1;">請點擊下方的按鈕，錄入本局閒家與莊家的開牌...</div>
-        </div>
+<div class="container">
+    <!-- 頂部動態訊號 -->
+    <div id="signal-box" class="signal-box">
+        <div id="signal-text" style="color: var(--text-sub);">請開始輸入開牌數據...</div>
+    </div>
 
-        <div class="round-input-container">
-            <!-- 閒家 -->
-            <div class="card zone-player">
-                <div class="zone-header">
-                    <span style="color: #60a5fa; font-size: 14px; font-weight: bold;">🔵 閒家 (Player)</span>
-                    <button onclick="clearCurrentHand('P')" style="background:none; border:none; color:#94a3b8; cursor:pointer; font-size:11px;">清空閒牌</button>
-                </div>
-                <div class="hand-display">
-                    <div id="p-cards-list" class="cards-list"><span style="color:#64748b; font-size:12px;">點擊數字錄入</span></div>
-                    <div id="p-score" class="score-badge">0 點</div>
-                </div>
-                <div class="card-grid">
-                    <button class="card-btn" onclick="addCurrentCard('P', 1)">A</button>
-                    <button class="card-btn" onclick="addCurrentCard('P', 2)">2</button>
-                    <button class="card-btn" onclick="addCurrentCard('P', 3)">3</button>
-                    <button class="card-btn" onclick="addCurrentCard('P', 4)">4</button>
-                    <button class="card-btn" onclick="addCurrentCard('P', 5)">5</button>
-                    <button class="card-btn" onclick="addCurrentCard('P', 6)">6</button>
-                    <button class="card-btn" onclick="addCurrentCard('P', 7)">7</button>
-                    <button class="card-btn" onclick="addCurrentCard('P', 8)">8</button>
-                    <button class="card-btn" onclick="addCurrentCard('P', 9)">9</button>
-                    <button class="card-btn" onclick="addCurrentCard('P', 0)">10/K</button>
-                </div>
-            </div>
-
-            <!-- 莊家 -->
-            <div class="card zone-banker">
-                <div class="zone-header">
-                    <span style="color: #f87171; font-size: 14px; font-weight: bold;">🔴 莊家 (Banker)</span>
-                    <button onclick="clearCurrentHand('B')" style="background:none; border:none; color:#94a3b8; cursor:pointer; font-size:11px;">清空莊牌</button>
-                </div>
-                <div class="hand-display">
-                    <div id="b-cards-list" class="cards-list"><span style="color:#64748b; font-size:12px;">點擊數字錄入</span></div>
-                    <div id="b-score" class="score-badge">0 點</div>
-                </div>
-                <div class="card-grid">
-                    <button class="card-btn" onclick="addCurrentCard('B', 1)">A</button>
-                    <button class="card-btn" onclick="addCurrentCard('B', 2)">2</button>
-                    <button class="card-btn" onclick="addCurrentCard('B', 3)">3</button>
-                    <button class="card-btn" onclick="addCurrentCard('B', 4)">4</button>
-                    <button class="card-btn" onclick="addCurrentCard('B', 5)">5</button>
-                    <button class="card-btn" onclick="addCurrentCard('B', 6)">6</button>
-                    <button class="card-btn" onclick="addCurrentCard('B', 7)">7</button>
-                    <button class="card-btn" onclick="addCurrentCard('B', 8)">8</button>
-                    <button class="card-btn" onclick="addCurrentCard('B', 9)">9</button>
-                    <button class="card-btn" onclick="addCurrentCard('B', 0)">10/K</button>
-                </div>
-            </div>
-        </div>
-
-        <button class="btn btn-submit" onclick="submitRound()">✅ 完成本局並計算下一局勝率</button>
-
+    <!-- 數據分析看板 -->
+    <div class="dashboard">
         <div class="card">
-            <div style="font-size:12px; font-weight:bold; color:#94a3b8; text-transform:uppercase;">下局精確條件組合勝率與期望值 (EV)</div>
-            <div class="prob-grid">
-                <div class="prob-card">
-                    <div style="font-size:12px; color:#f87171; font-weight:bold;">莊家 (Banker)</div>
-                    <div id="prob-b" class="prob-val">45.8597%</div>
-                    <div id="ev-b" class="ev-val">EV: -1.0579%</div>
-                </div>
-                <div class="prob-card">
-                    <div style="font-size:12px; color:#60a5fa; font-weight:bold;">閒家 (Player)</div>
-                    <div id="prob-p" class="prob-val">44.6247%</div>
-                    <div id="ev-p" class="ev-val">EV: -1.2351%</div>
-                </div>
-                <div class="prob-card">
-                    <div style="font-size:12px; color:#34d399; font-weight:bold;">和局 (Tie)</div>
-                    <div id="prob-t" class="prob-val">9.5156%</div>
-                    <div id="ev-t" class="ev-val">EV: -14.3596%</div>
-                </div>
-            </div>
+            <div class="card-title">莊家機率 / EV</div>
+            <div id="val-b" class="card-value" style="color: var(--banker-red);">45.86%</div>
+            <div id="ev-b" style="font-size:11px; color:var(--text-sub);">EV: -1.06%</div>
         </div>
-
         <div class="card">
-            <div style="font-size:12px; font-weight:bold; color:#94a3b8;">歷史牌局紀錄：</div>
-            <div id="history-container" class="history-list">
-                <span style="color:#64748b; font-style:italic;">尚無牌局歷史資料</span>
-            </div>
+            <div class="card-title">閒家機率 / EV</div>
+            <div id="val-p" class="card-value" style="color: var(--player-blue);">44.62%</div>
+            <div id="ev-p" style="font-size:11px; color:var(--text-sub);">EV: -1.24%</div>
+        </div>
+        <div class="card">
+            <div class="card-title">對子機率 / EV (莊對/閒對)</div>
+            <div id="val-pair" class="card-value" style="color: var(--pair-gold);">7.47%</div>
+            <div id="ev-pair" style="font-size:11px; color:var(--text-sub);">EV: -10.36%</div>
+        </div>
+        <div class="card">
+            <div class="card-title">和局機率 / EV</div>
+            <div id="val-t" class="card-value" style="color: var(--tie-green);">9.52%</div>
+            <div id="ev-t" style="font-size:11px; color:var(--text-sub);">EV: -14.36%</div>
         </div>
     </div>
 
-    <script>
-        const INITIAL_DECK = { 1: 32, 2: 32, 3: 32, 4: 32, 5: 32, 6: 32, 7: 32, 8: 32, 9: 32, 0: 128 };
-        let deck = { ...INITIAL_DECK };
-        let totalCards = 416;
-        let roundHistory = [];
-        let currentHandP = [];
-        let currentHandB = [];
+    <!-- 13 軌剩餘牌庫監控 -->
+    <div class="deck-status">
+        <div style="display:flex; justify-size:space-between; font-size:12px; color:var(--text-sub);">
+            <span>13 軌牌庫剩餘監控</span>
+            <span id="total-cards">剩餘：416 / 416 張 (100%)</span>
+        </div>
+        <div class="deck-grid" id="deck-display"></div>
+    </div>
 
-        // 計算點數公式 (累加取餘 10)
-        function calcPoints(cards) {
-            if (cards.length === 0) return 0;
-            const sum = cards.reduce((acc, val) => acc + val, 0);
-            return sum % 10;
+    <!-- 點數輸入區 -->
+    <div class="input-section">
+        <div class="current-hand">
+            <span>本局輸入：<span id="temp-cards" style="color: var(--pair-gold);">無</span></span>
+            <span id="temp-count">已選 0 張</span>
+        </div>
+        <div class="btn-grid">
+            <button class="btn-card" onclick="addCard('A')">A</button>
+            <button class="btn-card" onclick="addCard('2')">2</button>
+            <button class="btn-card" onclick="addCard('3')">3</button>
+            <button class="btn-card" onclick="addCard('4')">4</button>
+            <button class="btn-card" onclick="addCard('5')">5</button>
+            <button class="btn-card" onclick="addCard('6')">6</button>
+            <button class="btn-card" onclick="addCard('7')">7</button>
+            <button class="btn-card" onclick="addCard('8')">8</button>
+            <button class="btn-card" onclick="addCard('9')">9</button>
+            <button class="btn-card" onclick="addCard('10')">10</button>
+            <button class="btn-card" onclick="addCard('J')">J</button>
+            <button class="btn-card" onclick="addCard('Q')">Q</button>
+            <button class="btn-card" onclick="addCard('K')">K</button>
+            <button class="btn-card" style="background:#dc2626;" onclick="popCard()">⌫</button>
+        </div>
+        <div class="action-btns">
+            <button class="btn-action btn-submit" onclick="submitHand()">完成本局並結算</button>
+            <button class="btn-action btn-reset" onclick="resetShoe()">重置新牌靴 (8副)</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    // 初始 8 副牌 13 軌狀態
+    const INITIAL_DECK = {
+        'A': 32, '2': 32, '3': 32, '4': 32, '5': 32,
+        '6': 32, '7': 32, '8': 32, '9': 32, '10': 32,
+        'J': 32, 'Q': 32, 'K': 32
+    };
+
+    let deck13 = { ...INITIAL_DECK };
+    let tempHand = [];
+
+    // 初始化顯示
+    updateDeckUI();
+
+    function addCard(rank) {
+        if (tempHand.length >= 6) return;
+        if (deck13[rank] <= 0) {
+            alert(`牌庫中已無點數 ${rank}`);
+            return;
+        }
+        tempHand.push(rank);
+        deck13[rank]--;
+        updateTempUI();
+        updateDeckUI();
+    }
+
+    function popCard() {
+        if (tempHand.length === 0) return;
+        let last = tempHand.pop();
+        deck13[last]++;
+        updateTempUI();
+        updateDeckUI();
+    }
+
+    function updateTempUI() {
+        document.getElementById('temp-cards').innerText = tempHand.length > 0 ? tempHand.join(', ') : '無';
+        document.getElementById('temp-count').innerText = `已選 ${tempHand.length} 張`;
+    }
+
+    function submitHand() {
+        if (tempHand.length < 4) {
+            alert('一局百家樂至少需輸入 4 張牌（閒家 2 張、莊家 2 張）');
+            return;
+        }
+        tempHand = [];
+        updateTempUI();
+        calculateAdvancedEV();
+    }
+
+    function resetShoe() {
+        if (confirm('確定要重置為 8 副新牌靴嗎？')) {
+            deck13 = { ...INITIAL_DECK };
+            tempHand = [];
+            updateTempUI();
+            updateDeckUI();
+            calculateAdvancedEV();
+        }
+    }
+
+    function updateDeckUI() {
+        const grid = document.getElementById('deck-display');
+        grid.innerHTML = '';
+        let total = 0;
+        for (let rank in deck13) {
+            total += deck13[rank];
+            grid.innerHTML += `
+                <div class="deck-item">
+                    <div>${rank}</div>
+                    <div style="font-weight:bold;">${deck13[rank]}</div>
+                </div>
+            `;
+        }
+        let percent = ((total / 416) * 100).toFixed(1);
+        document.getElementById('total-cards').innerText = `剩餘：${total} / 416 張 (${percent}%)`;
+    }
+
+    function calculateAdvancedEV() {
+        let N = 0;
+        for (let rank in deck13) { N += deck13[rank]; }
+
+        if (N < 14) {
+            document.getElementById('signal-text').innerText = '牌靴已枯竭（剩餘 < 14 張），建議停止下注';
+            return;
         }
 
-        function addCurrentCard(target, val) {
-            if (target === 'P') {
-                if (currentHandP.length >= 3) return alert('閒家最多 3 張牌');
-                currentHandP.push(val);
-            } else {
-                if (currentHandB.length >= 3) return alert('莊家最多 3 張牌');
-                currentHandB.push(val);
-            }
-            renderCurrentHand();
+        // 1. 精確計算對子概率與 EV
+        let pairCombos = 0;
+        for (let rank in deck13) {
+            let c = deck13[rank];
+            pairCombos += c * (c - 1);
+        }
+        const pPair = pairCombos / (N * (N - 1));
+        const evPair = (12 * pPair) - 1; // 11賠1 (回報 12 倍)
+
+        // 2. 轉換點數矩陣計算莊/閒/和 EV
+        let c0 = deck13['10'] + deck13['J'] + deck13['Q'] + deck13['K'];
+        let d = {
+            0: c0, 1: deck13['A'], 2: deck13['2'], 3: deck13['3'], 4: deck13['4'],
+            5: deck13['5'], 6: deck13['6'], 7: deck13['7'], 8: deck13['8'], 9: deck13['9']
+        };
+
+        const wB = { 1:0.00015, 2:0.00028, 3:0.00042, 4:0.00065, 5:-0.00018, 6:-0.00041, 7:-0.00052, 8:-0.00035, 9:-0.00012, 0:0.00008 };
+        const wP = { 1:-0.00012, 2:-0.00025, 3:-0.00038, 4:-0.00058, 5:0.00051, 6:0.00072, 7:0.00081, 8:0.00053, 9:0.00025, 0:-0.00015 };
+
+        let bShift = 0, pShift = 0;
+        for (let v = 0; v <= 9; v++) {
+            let initRatio = (v === 0) ? (128 / 416) : (32 / 416);
+            let diff = (d[v] / N) - initRatio;
+            bShift += diff * wB[v] * 100;
+            pShift += diff * wP[v] * 100;
         }
 
-        function clearCurrentHand(target) {
-            if (target === 'P') currentHandP = [];
-            else currentHandB = [];
-            renderCurrentHand();
+        const pB = 0.458597 + bShift;
+        const pP = 0.446247 + pShift;
+        const pT = 1.0 - pB - pP;
+
+        const evB = (pB * 0.95) - (1 - pB - pT);
+        const evP = (pP * 1.0) - (1 - pP - pT);
+        const evT = (pT * 8.0) - (1 - pT);
+
+        // UI 數值渲染
+        document.getElementById('val-b').innerText = (pB * 100).toFixed(2) + '%';
+        document.getElementById('val-p').innerText = (pP * 100).toFixed(2) + '%';
+        document.getElementById('val-pair').innerText = (pPair * 100).toFixed(2) + '%';
+        document.getElementById('val-t').innerText = (pT * 100).toFixed(2) + '%';
+
+        document.getElementById('ev-b').innerText = `EV: ${(evB * 100).toFixed(2)}%`;
+        document.getElementById('ev-p').innerText = `EV: ${(evP * 100).toFixed(2)}%`;
+        document.getElementById('ev-pair').innerText = `EV: ${(evPair * 100).toFixed(2)}%`;
+        document.getElementById('ev-t').innerText = `EV: ${(evT * 100).toFixed(2)}%`;
+
+        // 3. 安全門檻過濾機制
+        const T_MAIN = 0.0025; // 主注 EV > +0.25%
+        const T_PAIR = 0.0120; // 對子 EV > +1.20%
+        const T_TIE  = 0.0200; // 和局 EV > +2.00%
+
+        let signals = [];
+        let boxColor = '#334155';
+
+        if (evPair > T_PAIR) {
+            signals.push(`<span style="color:#f59e0b;">🔥 對子觸發正 EV：下注【莊對 & 閒對】</span>`);
+            boxColor = '#f59e0b';
+        }
+        if (evB > T_MAIN) {
+            signals.push(`<span style="color:#f87171;">🔴 主注推薦【莊家】</span>`);
+            boxColor = '#ef4444';
+        } else if (evP > T_MAIN) {
+            signals.push(`<span style="color:#60a5fa;">🔵 主注推薦【閒家】</span>`);
+            boxColor = '#3b82f6';
+        }
+        if (evT > T_TIE) {
+            signals.push(`<span style="color:#34d399;">🟢 旁注推薦【和局】</span>`);
         }
 
-        function renderCurrentHand() {
-            const pEl = document.getElementById('p-cards-list');
-            const bEl = document.getElementById('b-cards-list');
-            const pScoreEl = document.getElementById('p-score');
-            const bScoreEl = document.getElementById('b-score');
+        const signalBox = document.getElementById('signal-box');
+        const signalText = document.getElementById('signal-text');
 
-            pEl.innerHTML = currentHandP.length === 0 ? '<span style="color:#64748b; font-size:12px;">點擊數字錄入</span>' : currentHandP.map(v => `<span class="card-tag" style="color:#60a5fa">${v === 0 ? '10/K' : v}</span>`).join('');
-            bEl.innerHTML = currentHandB.length === 0 ? '<span style="color:#64748b; font-size:12px;">點擊數字錄入</span>' : currentHandB.map(v => `<span class="card-tag" style="color:#f87171">${v === 0 ? '10/K' : v}</span>`).join('');
-
-            pScoreEl.innerText = `${calcPoints(currentHandP)} 點`;
-            bScoreEl.innerText = `${calcPoints(currentHandB)} 點`;
+        signalBox.style.borderColor = boxColor;
+        if (signals.length > 0) {
+            signalText.innerHTML = signals.join(' | ');
+        } else {
+            signalText.innerText = `剩餘 ${N} 張 | 當前未達安全下注門檻，建議觀望`;
         }
+    }
+</script>
 
-        function submitRound() {
-            if (currentHandP.length === 0 && currentHandB.length === 0) return alert('請至少錄入閒家或莊家的牌面！');
-            const allCards = [...currentHandP, ...currentHandB];
-            for (let v of allCards) { if (deck[v] <= 0) return alert(`點數 ${v === 0 ? '10/K' : v} 已耗盡！`); }
-            for (let v of allCards) { deck[v]--; totalCards--; }
-
-            const pScore = calcPoints(currentHandP);
-            const bScore = calcPoints(currentHandB);
-            
-            let winner = '和';
-            if (pScore > bScore) winner = '閒';
-            else if (bScore > pScore) winner = '莊';
-
-            roundHistory.push({
-                round: roundHistory.length + 1,
-                p: [...currentHandP],
-                b: [...currentHandB],
-                pScore,
-                bScore,
-                winner
-            });
-
-            currentHandP = []; currentHandB = [];
-            renderCurrentHand();
-            updateDashboard();
-        }
-
-        function undoLastRound() {
-            if (roundHistory.length === 0) return;
-            const last = roundHistory.pop();
-            [...last.p, ...last.b].forEach(v => { deck[v]++; totalCards++; });
-            updateDashboard();
-        }
-
-        function resetShoe() {
-            if (!confirm('確定要洗牌並重置嗎？')) return;
-            deck = { ...INITIAL_DECK }; totalCards = 416; roundHistory = []; currentHandP = []; currentHandB = [];
-            renderCurrentHand(); updateDashboard();
-        }
-
-        function updateDashboard() {
-            document.getElementById('total-cards').innerText = totalCards;
-            document.getElementById('round-num').innerText = roundHistory.length + 1;
-            const histEl = document.getElementById('history-container');
-
-            histEl.innerHTML = roundHistory.length === 0 ? '<span style="color:#64748b; font-style:italic;">尚無牌局歷史資料</span>' : roundHistory.slice().reverse().map(item => {
-                let tagClass = 'tag-t';
-                if (item.winner === '閒') tagClass = 'tag-p';
-                if (item.winner === '莊') tagClass = 'tag-b';
-
-                return `
-                    <div class="history-row">
-                        <span>第 ${item.round} 局</span>
-                        <span><span style="color:#60a5fa">閒:</span> ${item.pScore}點 [${item.p.map(v => v === 0 ? '10/K' : v).join(',') || '無'}]</span>
-                        <span><span style="color:#f87171">莊:</span> ${item.bScore}點 [${item.b.map(v => v === 0 ? '10/K' : v).join(',') || '無'}]</span>
-                        <span class="winner-tag ${tagClass}">${item.winner}勝</span>
-                    </div>
-                `;
-            }).join('');
-            calculateExactCombinatorics();
-        }
-
-        function calculateExactCombinatorics() {
-            if (totalCards < 16) { document.getElementById('signal-text').innerText = '牌靴即將結束，建議停止下注'; return; }
-            const valWeightsB = { 1: 0.00015, 2: 0.00028, 3: 0.00042, 4: 0.00065, 5: -0.00018, 6: -0.00041, 7: -0.00052, 8: -0.00035, 9: -0.00012, 0: 0.00008 };
-            const valWeightsP = { 1: -0.00012, 2: -0.00025, 3: -0.00038, 4: -0.00058, 5: 0.00051, 6: 0.00072, 7: 0.00081, 8: 0.00053, 9: 0.00025, 0: -0.00015 };
-            let bShift = 0, pShift = 0;
-            for (let v = 0; v <= 9; v++) {
-                const initialRatio = v === 0 ? (128 / 416) : (32 / 416);
-                const diff = (deck[v] / totalCards) - initialRatio;
-                bShift += diff * valWeightsB[v] * 100;
-                pShift += diff * valWeightsP[v] * 100;
-            }
-            const pB = 0.458597 + bShift, pP = 0.446247 + pShift, pT = 1.0 - pB - pP;
-            const evB = (pB * 0.95) - (1 - pB - pT), evP = (pP * 1.0) - (1 - pP - pT), evT = (pT * 8.0) - (1 - pT);
-
-            document.getElementById('prob-b').innerText = (pB * 100).toFixed(4) + '%';
-            document.getElementById('prob-p').innerText = (pP * 100).toFixed(4) + '%';
-            document.getElementById('prob-t').innerText = (pT * 100).toFixed(4) + '%';
-            updateEVDisplay('ev-b', evB); updateEVDisplay('ev-p', evP); updateEVDisplay('ev-t', evT);
-
-            const signalBox = document.getElementById('signal-box');
-            const signalText = document.getElementById('signal-text');
-            if (evB > 0) {
-                signalBox.style.borderColor = '#ef4444'; signalBox.style.backgroundColor = 'rgba(153, 27, 27, 0.6)';
-                signalText.innerHTML = `<span style="color:#f87171; font-size:18px;">🔥 下局觸發正 EV：推薦下注【莊家】(EV: +${(evB * 100).toFixed(4)}%)</span>`;
-            } else if (evP > 0) {
-                signalBox.style.borderColor = '#3b82f6'; signalBox.style.backgroundColor = 'rgba(30, 64, 175, 0.6)';
-                signalText.innerHTML = `<span style="color:#60a5fa; font-size:18px;">🔥 下局觸發正 EV：推薦下注【閒家】(EV: +${(evP * 100).toFixed(4)}%)</span>`;
-            } else if (evT > 0) {
-                signalBox.style.borderColor = '#10b981'; signalBox.style.backgroundColor = 'rgba(6, 78, 59, 0.6)';
-                signalText.innerHTML = `<span style="color:#34d399; font-size:18px;">⚡ 下局高機率和局：推薦觀望或小注【和局】(EV: +${(evT * 100).toFixed(4)}%)</span>`;
-            } else {
-                signalBox.style.borderColor = '#334155'; signalBox.style.backgroundColor = '#1e293b';
-                signalText.innerText = `下局無正 EV 下注點，建議觀望或順應路勢`;
-            }
-        }
-
-        function updateEVDisplay(id, evVal) {
-            const el = document.getElementById(id);
-            const valStr = (evVal * 100).toFixed(4) + '%';
-            if (evVal > 0) { el.innerText = `EV: +${valStr}`; el.style.color = '#34d399'; el.style.fontWeight = 'bold'; }
-            else { el.innerText = `EV: ${valStr}`; el.style.color = '#64748b'; }
-        }
-
-        updateDashboard();
-    </script>
 </body>
 </html>
