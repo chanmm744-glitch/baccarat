@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>百家樂專業級 13 軌戰術儀表板 (智慧補牌版)</title>
+    <title>百家樂專業級 13 軌戰術儀表板 (全自動結算版)</title>
     <style>
         :root {
             --bg-color: #f1f5f9;
@@ -172,7 +172,7 @@
 
         .action-btns {
             display: grid;
-            grid-template-columns: 2fr 1fr 1fr;
+            grid-template-columns: 1fr 1fr;
             gap: 8px;
             margin-top: 8px;
         }
@@ -186,7 +186,6 @@
             font-size: 13px;
         }
 
-        .btn-submit { background-color: var(--player-blue); color: white; }
         .btn-undo { background-color: #d97706; color: white; }
         .btn-reset { background-color: var(--banker-red); color: white; }
 
@@ -346,7 +345,6 @@
         </div>
 
         <div class="action-btns">
-            <button class="btn-action btn-submit" onclick="submitHand()">完成本局並結算</button>
             <button class="btn-action btn-undo" onclick="undoLastHand()">↺ 撤銷上局</button>
             <button class="btn-action btn-reset" onclick="resetShoe()">重置牌靴</button>
         </div>
@@ -375,7 +373,7 @@
         <div class="panel">
             <div class="panel-title">SYSTEM LOG (運算日誌)</div>
             <div id="sys-log" class="sys-log">
-                <div class="log-item"><span class="log-time">[系統啟動]</span> 智慧補牌版 13 軌戰術儀表板已就緒...</div>
+                <div class="log-item"><span class="log-time">[系統啟動]</span> 全自動結算儀表板已就緒...</div>
             </div>
         </div>
     </div>
@@ -424,7 +422,6 @@
         }
     }
 
-    /* 計算手牌總點數 (0~9) */
     function getHandScore(hand) {
         let sum = hand.reduce((acc, c) => {
             let v = (['10','J','Q','K'].includes(c)) ? 0 : (c === 'A' ? 1 : parseInt(c));
@@ -433,23 +430,15 @@
         return sum % 10;
     }
 
-    /* 計算單張牌的點數 (0~9) */
     function getCardValue(c) {
         return (['10','J','Q','K'].includes(c)) ? 0 : (c === 'A' ? 1 : parseInt(c));
     }
 
-    /* 判斷莊家是否需要補第 3 張牌 */
     function checkBankerNeedsDraw(bScore, pHand) {
         if (bScore >= 8) return false;
+        if (pHand.length === 2) return bScore <= 5;
 
-        // 閒家沒補第 3 張（閒家 6 或 7 點）
-        if (pHand.length === 2) {
-            return bScore <= 5;
-        }
-
-        // 閒家有補第 3 張，需比對閒家第 3 張牌點數
         let p3 = getCardValue(pHand[2]);
-
         if (bScore <= 2) return true;
         if (bScore === 3) return p3 !== 8;
         if (bScore === 4) return [2, 3, 4, 5, 6, 7].includes(p3);
@@ -459,13 +448,10 @@
         return false;
     }
 
-    /* 交替派牌與智慧型補牌規則判定 */
+    /* 點擊卡牌：自動判斷發牌、補牌、以及「自動結算」 */
     function addCard(rank) {
         let targetHand = currentSide === 'P' ? pHand : bHand;
-        if (targetHand.length >= 3) {
-            alert(`單邊最多只能輸入 3 張牌`);
-            return;
-        }
+        if (targetHand.length >= 3) return;
         if (deck13[rank] <= 0) {
             alert(`牌庫中已無點數 ${rank}`);
             return;
@@ -474,31 +460,39 @@
         targetHand.push(rank);
         deck13[rank]--;
 
-        // 階段一：前 4 張起手牌交替跳轉 (閒1 -> 莊1 -> 閒2 -> 莊2)
+        // 階段一：前 4 張牌交替派牌 (閒1 -> 莊1 -> 閒2 -> 莊2)
         if (pHand.length === 1 && bHand.length === 0) {
             selectSide('B');
         } else if (pHand.length === 1 && bHand.length === 1) {
             selectSide('P');
         } else if (pHand.length === 2 && bHand.length === 1) {
             selectSide('B');
-        } else {
-            // 階段二：前 4 張牌齊全，進行補牌規則判定
+        } 
+        // 階段二：前 4 張已輸入完畢，判定補牌與自動結算
+        else {
             let pScore = getHandScore(pHand);
             let bScore = getHandScore(bHand);
 
-            // 1. 天牌 (Natural 8, 9 點) -> 雙方停止補牌
+            // 1. 天牌 (Natural 8, 9 點) ➔ 直接自動結算
             if (pHand.length === 2 && bHand.length === 2 && (pScore >= 8 || bScore >= 8)) {
-                addLog(`天牌觸發 (閒 ${pScore} / 莊 ${bScore})，無需補牌`);
-            } 
-            // 2. 閒家補牌判定 (閒起手 0~5 點，且閒尚未補牌)
-            else if (pHand.length === 2 && pScore <= 5) {
-                selectSide('P'); // 自動跳閒家等待補第 3 張
-            } 
-            // 3. 莊家補牌判定
-            else {
+                updateHandUI();
+                setTimeout(submitHand, 100);
+                return;
+            }
+
+            // 2. 閒家補牌判定
+            if (pHand.length === 2 && pScore <= 5) {
+                selectSide('P'); // 切換到閒家等待第 3 張
+            } else {
+                // 閒家停牌，檢查莊家是否補牌
                 let bankerNeedsDraw = checkBankerNeedsDraw(bScore, pHand);
                 if (bankerNeedsDraw && bHand.length === 2) {
-                    selectSide('B'); // 自動跳莊家等待補第 3 張
+                    selectSide('B'); // 切換到莊家等待第 3 張
+                } else {
+                    // 閒/莊皆補牌結束 ➔ 直接自動結算
+                    updateHandUI();
+                    setTimeout(submitHand, 100);
+                    return;
                 }
             }
         }
@@ -541,11 +535,9 @@
         logBox.scrollTop = logBox.scrollHeight;
     }
 
+    /* 結算邏輯 (自動被呼叫) */
     function submitHand() {
-        if (pHand.length < 2 || bHand.length < 2) {
-            alert('閒家與莊家必須各至少輸入 2 張牌！');
-            return;
-        }
+        if (pHand.length < 2 || bHand.length < 2) return;
 
         historyStack.push({
             pHand: [...pHand],
@@ -592,7 +584,7 @@
         `;
         tbody.insertBefore(row, tbody.firstChild);
 
-        addLog(`第 ${handCount} 局: 閒[${pHand.join('')}] vs 莊[${bHand.join('')}] => ${resultStr}`);
+        addLog(`⚡ 第 ${handCount} 局自動結算: 閒[${pHand.join('')}] vs 莊[${bHand.join('')}] => ${resultStr}`);
 
         pHand = [];
         bHand = [];
