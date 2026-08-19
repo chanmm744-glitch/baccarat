@@ -3,125 +3,153 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>百家樂分區算牌輔助儀表板</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-</head>
-<body class="bg-slate-950 text-slate-100 min-h-screen p-3 md:p-5 font-sans select-none">
-    <div class="max-w-4xl mx-auto space-y-4">
+    <title>百家樂個人實時戰術板</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+        body { background-color: #0f172a; color: #f8fafc; padding: 16px; user-select: none; min-height: 100vh; }
+        .container { max-width: 900px; margin: 0 auto; display: flex; flex-direction: column; gap: 16px; }
         
-        <!-- 頂部資訊與控制 -->
-        <div class="flex justify-between items-center bg-slate-900 p-4 rounded-xl border border-slate-800 shadow-lg">
+        /* 卡片通用樣式 */
+        .card { background-color: #1e293b; border: 1px solid #334155; border-radius: 12px; padding: 16px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.3); }
+        
+        /* 頂部列 */
+        .header { display: flex; justify-content: space-between; align-items: center; }
+        .title { font-size: 18px; font-weight: bold; color: #34d399; }
+        .subtitle { font-size: 12px; color: #94a3b8; margin-top: 4px; }
+        .btn-group { display: flex; gap: 8px; }
+        
+        /* 按鈕樣式 */
+        .btn { padding: 6px 12px; border-radius: 8px; font-size: 12px; font-weight: 600; cursor: pointer; border: 1px solid transparent; transition: all 0.2s; }
+        .btn-undo { background-color: #334155; color: #f8fafc; border-color: #475569; }
+        .btn-undo:hover { background-color: #475569; }
+        .btn-reset { background-color: #881337; color: #fecdd3; border-color: #9f1239; }
+        .btn-reset:hover { background-color: #9f1239; }
+        
+        /* 提示框 */
+        .signal-box { text-align: center; }
+        .signal-label { font-size: 12px; color: #94a3b8; display: block; margin-bottom: 4px; }
+        .signal-text { font-size: 16px; font-weight: bold; color: #cbd5e1; }
+        
+        /* 雙區按鈕版面 */
+        .zones-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+        @media (max-width: 640px) { .zones-grid { grid-template-columns: 1fr; } }
+        
+        .zone-player { border: 2px solid #1e3a8a; background-color: rgba(15, 23, 42, 0.6); }
+        .zone-banker { border: 2px solid #831843; background-color: rgba(15, 23, 42, 0.6); }
+        .zone-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; padding-bottom: 8px; border-bottom: 1px solid #334155; }
+        .zone-title-p { color: #60a5fa; font-size: 14px; font-weight: bold; }
+        .zone-title-b { color: #f87171; font-size: 14px; font-weight: bold; }
+        
+        .card-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; }
+        .card-btn { height: 50px; background-color: #334155; color: #ffffff; border: 1px solid #475569; border-radius: 8px; font-size: 14px; font-weight: bold; cursor: pointer; transition: transform 0.1s; }
+        .card-btn:active { transform: scale(0.95); }
+        .card-btn-p:hover { background-color: #2563eb; }
+        .card-btn-b:hover { background-color: #dc2626; }
+        
+        /* 機率面板 */
+        .prob-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 8px; }
+        .prob-card { background-color: #0f172a; padding: 12px; border-radius: 8px; border: 1px solid #1e293b; text-align: center; }
+        .prob-val { font-size: 14px; font-weight: bold; font-family: monospace; color: #e2e8f0; margin: 4px 0; }
+        .ev-val { font-size: 11px; font-family: monospace; color: #64748b; }
+        
+        /* 歷史記錄 */
+        .history-list { display: flex; flex-wrap: wrap; gap: 6px; max-height: 90px; overflow-y: auto; font-size: 12px; font-family: monospace; margin-top: 8px; }
+        .tag { padding: 2px 8px; border-radius: 4px; border: 1px solid transparent; }
+        .tag-b { background-color: rgba(136, 19, 55, 0.4); color: #f87171; border-color: #9f1239; }
+        .tag-p { background-color: rgba(30, 58, 138, 0.4); color: #60a5fa; border-color: #1e40af; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        
+        <!-- 頂部資訊列 -->
+        <div class="card header">
             <div>
-                <h1 class="text-base font-bold text-emerald-400">百家樂雙區精確算牌器</h1>
-                <p class="text-xs text-slate-400">剩餘張數：<span id="total-cards" class="text-emerald-300 font-mono font-bold">416</span> / 416 (8副牌)</p>
+                <div class="title">百家樂實時雙區算牌板</div>
+                <div class="subtitle">剩餘張數：<span id="total-cards" style="color:#6ee7b7; font-family:monospace; font-weight:bold;">416</span> / 416 (8副牌)</div>
             </div>
-            <div class="flex gap-2">
-                <button onclick="undoLastCard()" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 active:scale-95 text-xs font-semibold rounded-lg border border-slate-700 transition">
-                    ↩ 撤銷上一張
-                </button>
-                <button onclick="resetShoe()" class="px-3 py-1.5 bg-rose-900/80 hover:bg-rose-800 active:scale-95 text-xs font-semibold rounded-lg border border-rose-700 transition">
-                    洗牌重置
-                </button>
+            <div class="btn-group">
+                <button onclick="undoLastCard()" class="btn btn-undo">↩ 撤銷</button>
+                <button onclick="resetShoe()" class="btn btn-reset">洗牌重置</button>
             </div>
         </div>
 
-        <!-- 動態 AI 訊號提示 -->
-        <div id="signal-box" class="bg-slate-900 p-4 rounded-xl border border-slate-800 text-center transition-all">
-            <span class="text-xs text-slate-400 block mb-1">機率模型動態建議</span>
-            <div id="signal-text" class="text-base font-bold text-slate-300">請依據開牌點擊「閒家」或「莊家」的牌面...</div>
+        <!-- AI 訊號提示 -->
+        <div id="signal-box" class="card signal-box">
+            <span class="signal-label">算牌模型動態建議</span>
+            <div id="signal-text" class="signal-text">請依據開牌點擊「閒家」或「莊家」的牌面...</div>
         </div>
 
-        <!-- 分區輸入面板：左閒 (藍) / 右莊 (紅) -->
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-            
-            <!-- 閒家輸入區 -->
-            <div class="bg-slate-900/90 p-4 rounded-xl border-2 border-blue-900/80 space-y-3">
-                <div class="flex justify-between items-center border-b border-blue-900/50 pb-2">
-                    <h2 class="text-sm font-bold text-blue-400 flex items-center gap-1.5">
-                        <span class="w-3 h-3 rounded-full bg-blue-500 inline-block"></span> 閒家 (Player) 點選區
-                    </h2>
-                    <span id="p-hand-display" class="text-xs font-mono text-blue-300 bg-blue-950 px-2 py-0.5 rounded border border-blue-800">當局: 無</span>
+        <!-- 閒家/莊家 分區點選 -->
+        <div class="zones-grid">
+            <!-- 閒家區 -->
+            <div class="card zone-player">
+                <div class="zone-header">
+                    <span class="zone-title-p">🔵 閒家 (Player)</span>
+                    <span id="p-hand-display" style="font-size:12px; color:#93c5fd; font-family:monospace;">當前: 無</span>
                 </div>
-                <div class="grid grid-cols-5 gap-1.5">
-                    <script>
-                        const pCards = [
-                            {label: 'A', val: 1}, {label: '2', val: 2}, {label: '3', val: 3}, {label: '4', val: 4}, {label: '5', val: 5},
-                            {label: '6', val: 6}, {label: '7', val: 7}, {label: '8', val: 8}, {label: '9', val: 9}, {label: '10/J/Q/K', val: 0}
-                        ];
-                        pCards.forEach(c => {
-                            document.write(`
-                                <button onclick="inputCard(${c.val}, 'P')" class="h-14 bg-slate-800/90 hover:bg-blue-600 active:scale-95 text-white font-bold rounded-lg border border-slate-700 transition flex flex-col items-center justify-center">
-                                    <span class="text-sm">${c.label}</span>
-                                </button>
-                            `);
-                        });
-                    </script>
+                <div class="card-grid">
+                    <button class="card-btn card-btn-p" onclick="inputCard(1, 'P')">A</button>
+                    <button class="card-btn card-btn-p" onclick="inputCard(2, 'P')">2</button>
+                    <button class="card-btn card-btn-p" onclick="inputCard(3, 'P')">3</button>
+                    <button class="card-btn card-btn-p" onclick="inputCard(4, 'P')">4</button>
+                    <button class="card-btn card-btn-p" onclick="inputCard(5, 'P')">5</button>
+                    <button class="card-btn card-btn-p" onclick="inputCard(6, 'P')">6</button>
+                    <button class="card-btn card-btn-p" onclick="inputCard(7, 'P')">7</button>
+                    <button class="card-btn card-btn-p" onclick="inputCard(8, 'P')">8</button>
+                    <button class="card-btn card-btn-p" onclick="inputCard(9, 'P')">9</button>
+                    <button class="card-btn card-btn-p" onclick="inputCard(0, 'P')">10/K</button>
                 </div>
             </div>
 
-            <!-- 莊家輸入區 -->
-            <div class="bg-slate-900/90 p-4 rounded-xl border-2 border-rose-900/80 space-y-3">
-                <div class="flex justify-between items-center border-b border-rose-900/50 pb-2">
-                    <h2 class="text-sm font-bold text-rose-400 flex items-center gap-1.5">
-                        <span class="w-3 h-3 rounded-full bg-rose-500 inline-block"></span> 莊家 (Banker) 點選區
-                    </h2>
-                    <span id="b-hand-display" class="text-xs font-mono text-rose-300 bg-rose-950 px-2 py-0.5 rounded border border-rose-800">當局: 無</span>
+            <!-- 莊家區 -->
+            <div class="card zone-banker">
+                <div class="zone-header">
+                    <span class="zone-title-b">🔴 莊家 (Banker)</span>
+                    <span id="b-hand-display" style="font-size:12px; color:#fca5a5; font-family:monospace;">當前: 無</span>
                 </div>
-                <div class="grid grid-cols-5 gap-1.5">
-                    <script>
-                        pCards.forEach(c => {
-                            document.write(`
-                                <button onclick="inputCard(${c.val}, 'B')" class="h-14 bg-slate-800/90 hover:bg-rose-600 active:scale-95 text-white font-bold rounded-lg border border-slate-700 transition flex flex-col items-center justify-center">
-                                    <span class="text-sm">${c.label}</span>
-                                </button>
-                            `);
-                        });
-                    </script>
+                <div class="card-grid">
+                    <button class="card-btn card-btn-b" onclick="inputCard(1, 'B')">A</button>
+                    <button class="card-btn card-btn-b" onclick="inputCard(2, 'B')">2</button>
+                    <button class="card-btn card-btn-b" onclick="inputCard(3, 'B')">3</button>
+                    <button class="card-btn card-btn-b" onclick="inputCard(4, 'B')">4</button>
+                    <button class="card-btn card-btn-b" onclick="inputCard(5, 'B')">5</button>
+                    <button class="card-btn card-btn-b" onclick="inputCard(6, 'B')">6</button>
+                    <button class="card-btn card-btn-b" onclick="inputCard(7, 'B')">7</button>
+                    <button class="card-btn card-btn-b" onclick="inputCard(8, 'B')">8</button>
+                    <button class="card-btn card-btn-b" onclick="inputCard(9, 'B')">9</button>
+                    <button class="card-btn card-btn-b" onclick="inputCard(0, 'B')">10/K</button>
                 </div>
             </div>
-
         </div>
 
-        <!-- 即時機率與剩餘牌數點數面板 -->
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-            
-            <!-- 勝率與 EV -->
-            <div class="md:col-span-2 bg-slate-900 p-4 rounded-xl border border-slate-800 space-y-3">
-                <h2 class="text-xs font-bold text-slate-400 uppercase tracking-wider">即時勝率與期望值 (EV)</h2>
-                <div class="grid grid-cols-3 gap-2">
-                    <div class="p-3 bg-slate-950/80 rounded-lg border border-slate-800 text-center">
-                        <div class="text-xs text-rose-400 font-bold mb-1">莊家 (Banker)</div>
-                        <div id="prob-b" class="text-sm font-bold font-mono text-slate-200">45.86%</div>
-                        <div id="ev-b" class="text-xs font-mono text-slate-500 mt-1">EV: -1.06%</div>
-                    </div>
-                    <div class="p-3 bg-slate-950/80 rounded-lg border border-slate-800 text-center">
-                        <div class="text-xs text-blue-400 font-bold mb-1">閒家 (Player)</div>
-                        <div id="prob-p" class="text-sm font-bold font-mono text-slate-200">44.62%</div>
-                        <div id="ev-p" class="text-xs font-mono text-slate-500 mt-1">EV: -1.24%</div>
-                    </div>
-                    <div class="p-3 bg-slate-950/80 rounded-lg border border-slate-800 text-center">
-                        <div class="text-xs text-emerald-400 font-bold mb-1">和局 (Tie)</div>
-                        <div id="prob-t" class="text-sm font-bold font-mono text-slate-200">9.52%</div>
-                        <div id="ev-t" class="text-xs font-mono text-slate-500 mt-1">EV: -14.36%</div>
-                    </div>
+        <!-- 勝率與 EV 面板 -->
+        <div class="card">
+            <div style="font-size:12px; font-weight:bold; color:#94a3b8; text-transform:uppercase;">即時勝率與期望值 (EV)</div>
+            <div class="prob-grid">
+                <div class="prob-card">
+                    <div style="font-size:12px; color:#f87171; font-weight:bold;">莊家 (Banker)</div>
+                    <div id="prob-b" class="prob-val">45.86%</div>
+                    <div id="ev-b" class="ev-val">EV: -1.06%</div>
+                </div>
+                <div class="prob-card">
+                    <div style="font-size:12px; color:#60a5fa; font-weight:bold;">閒家 (Player)</div>
+                    <div id="prob-p" class="prob-val">44.62%</div>
+                    <div id="ev-p" class="ev-val">EV: -1.24%</div>
+                </div>
+                <div class="prob-card">
+                    <div style="font-size:12px; color:#34d399; font-weight:bold;">和局 (Tie)</div>
+                    <div id="prob-t" class="prob-val">9.52%</div>
+                    <div id="ev-t" class="ev-val">EV: -14.36%</div>
                 </div>
             </div>
-
-            <!-- 牌堆剩餘張數預覽 -->
-            <div class="bg-slate-900 p-4 rounded-xl border border-slate-800">
-                <h2 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">牌堆點數剩餘</h2>
-                <div id="deck-status" class="grid grid-cols-5 gap-1 text-[11px] font-mono text-center">
-                    <!-- 由 JS 動態生成 -->
-                </div>
-            </div>
-
         </div>
 
-        <!-- 歷史出牌紀錄 -->
-        <div class="bg-slate-900 p-4 rounded-xl border border-slate-800">
-            <h2 class="text-xs font-bold text-slate-400 mb-2">出牌歷史序列 (最近在上)：</h2>
-            <div id="history-container" class="flex flex-wrap gap-1.5 max-h-24 overflow-y-auto text-xs font-mono">
-                <span class="text-slate-600 italic">尚無資料</span>
+        <!-- 歷史紀錄 -->
+        <div class="card">
+            <div style="font-size:12px; font-weight:bold; color:#94a3b8;">出牌歷史記錄序列：</div>
+            <div id="history-container" class="history-list">
+                <span style="color:#64748b; font-style:italic;">尚無資料</span>
             </div>
         </div>
 
@@ -131,7 +159,7 @@
         const INITIAL_DECK = { 1: 32, 2: 32, 3: 32, 4: 32, 5: 32, 6: 32, 7: 32, 8: 32, 9: 32, 0: 128 };
         let deck = { ...INITIAL_DECK };
         let totalCards = 416;
-        let cardHistory = []; // { val, target: 'B'|'P' }
+        let cardHistory = [];
 
         function inputCard(val, target) {
             if (deck[val] <= 0) return alert('該點數牌已用盡！');
@@ -160,30 +188,20 @@
         function updateDashboard() {
             document.getElementById('total-cards').innerText = totalCards;
 
-            // 更新當前手牌顯示（最近各 3 張）
             const bCards = cardHistory.filter(x => x.target === 'B').slice(-3).map(x => x.val === 0 ? 'K' : x.val);
             const pCards = cardHistory.filter(x => x.target === 'P').slice(-3).map(x => x.val === 0 ? 'K' : x.val);
             document.getElementById('b-hand-display').innerText = `當前: ${bCards.length > 0 ? bCards.join(' ') : '無'}`;
             document.getElementById('p-hand-display').innerText = `當前: ${pCards.length > 0 ? pCards.join(' ') : '無'}`;
 
-            // 更新剩餘張數面板
-            const statusEl = document.getElementById('deck-status');
-            statusEl.innerHTML = '';
-            for (let i = 1; i <= 9; i++) {
-                statusEl.innerHTML += `<div class="bg-slate-950 p-1 rounded border border-slate-800"><span class="text-slate-500">${i}:</span> <span class="text-emerald-400 font-bold">${deck[i]}</span></div>`;
-            }
-            statusEl.innerHTML += `<div class="bg-slate-950 p-1 rounded border border-slate-800"><span class="text-slate-500">10/K:</span> <span class="text-emerald-400 font-bold">${deck[0]}</span></div>`;
-
-            // 更新歷史序列
             const histEl = document.getElementById('history-container');
             if (cardHistory.length === 0) {
-                histEl.innerHTML = '<span class="text-slate-600 italic">尚無資料</span>';
+                histEl.innerHTML = '<span style="color:#64748b; font-style:italic;">尚無資料</span>';
             } else {
                 histEl.innerHTML = cardHistory.map(item => {
-                    const color = item.target === 'B' ? 'text-rose-400 border-rose-900/60 bg-rose-950/40' : 'text-blue-400 border-blue-900/60 bg-blue-950/40';
-                    const tag = item.target === 'B' ? '莊' : '閒';
-                    const label = item.val === 0 ? 'K' : item.val;
-                    return `<span class="px-2 py-0.5 border rounded ${color}">${tag}:${label}</span>`;
+                    const tagClass = item.target === 'B' ? 'tag-b' : 'tag-p';
+                    const tagText = item.target === 'B' ? '莊' : '閒';
+                    const label = item.val === 0 ? '10/K' : item.val;
+                    return `<span class="tag ${tagClass}">${tagText}:${label}</span>`;
                 }).join('');
             }
 
@@ -219,16 +237,20 @@
             const signalText = document.getElementById('signal-text');
 
             if (evB > 0) {
-                signalBox.className = "bg-rose-950/80 border-2 border-rose-500 p-4 rounded-xl text-center shadow-lg shadow-rose-950/50";
-                signalText.innerHTML = `<span class="text-rose-400 font-extrabold text-lg">🔥 觸發優勢訊號：推薦下注【莊家】(EV: +${(evB * 100).toFixed(2)}%)</span>`;
+                signalBox.style.borderColor = '#ef4444';
+                signalBox.style.backgroundColor = 'rgba(153, 27, 27, 0.6)';
+                signalText.innerHTML = `<span style="color:#f87171; font-size:18px;">🔥 觸發優勢訊號：推薦下注【莊家】(EV: +${(evB * 100).toFixed(2)}%)</span>`;
             } else if (evP > 0) {
-                signalBox.className = "bg-blue-950/80 border-2 border-blue-500 p-4 rounded-xl text-center shadow-lg shadow-blue-950/50";
-                signalText.innerHTML = `<span class="text-blue-400 font-extrabold text-lg">🔥 觸發優勢訊號：推薦下注【閒家】(EV: +${(evP * 100).toFixed(2)}%)</span>`;
+                signalBox.style.borderColor = '#3b82f6';
+                signalBox.style.backgroundColor = 'rgba(30, 64, 175, 0.6)';
+                signalText.innerHTML = `<span style="color:#60a5fa; font-size:18px;">🔥 觸發優勢訊號：推薦下注【閒家】(EV: +${(evP * 100).toFixed(2)}%)</span>`;
             } else if (evT > 0) {
-                signalBox.className = "bg-emerald-950/80 border-2 border-emerald-500 p-4 rounded-xl text-center shadow-lg shadow-emerald-950/50";
-                signalText.innerHTML = `<span class="text-emerald-400 font-extrabold text-lg">⚡ 高機率和局警示：推薦觀望或小注【和局】(EV: +${(evT * 100).toFixed(2)}%)</span>`;
+                signalBox.style.borderColor = '#10b981';
+                signalBox.style.backgroundColor = 'rgba(6, 78, 59, 0.6)';
+                signalText.innerHTML = `<span style="color:#34d399; font-size:18px;">⚡ 高機率和局警示：推薦觀望或小注【和局】(EV: +${(evT * 100).toFixed(2)}%)</span>`;
             } else {
-                signalBox.className = "bg-slate-900 p-4 rounded-xl border border-slate-800 text-center";
+                signalBox.style.borderColor = '#334155';
+                signalBox.style.backgroundColor = '#1e293b';
                 signalText.innerText = `當前無正 EV 下注點，建議觀望或順應路勢`;
             }
         }
@@ -238,10 +260,11 @@
             const valStr = (evVal * 100).toFixed(2) + '%';
             if (evVal > 0) {
                 el.innerText = `EV: +${valStr}`;
-                el.className = "text-xs font-mono font-bold text-emerald-400";
+                el.style.color = '#34d399';
+                el.style.fontWeight = 'bold';
             } else {
                 el.innerText = `EV: ${valStr}`;
-                el.className = "text-xs font-mono text-slate-500";
+                el.style.color = '#64748b';
             }
         }
 
