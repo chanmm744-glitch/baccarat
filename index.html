@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>百家樂專業級 13 軌戰術儀表板 (進階版)</title>
+    <title>百家樂專業級 13 軌戰術儀表板 (智慧補牌版)</title>
     <style>
         :root {
             --bg-color: #f1f5f9;
@@ -35,7 +35,6 @@
             gap: 10px;
         }
 
-        /* 頂部狀態橫條 */
         .status-bar {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
@@ -53,7 +52,6 @@
         .status-title { font-size: 11px; color: var(--text-sub); }
         .status-val { font-size: 16px; font-weight: bold; margin-top: 2px; }
 
-        /* 動態訊號欄 */
         .signal-box {
             background-color: var(--card-bg);
             border: 2px solid #94a3b8;
@@ -65,7 +63,6 @@
             box-shadow: 0 1px 3px rgba(0,0,0,0.05);
         }
 
-        /* 資金管理列 */
         .bankroll-bar {
             background-color: var(--card-bg);
             border: 1px solid var(--border-color);
@@ -85,7 +82,6 @@
             font-weight: bold;
         }
 
-        /* 核心算牌數據看板 */
         .dashboard {
             display: grid;
             grid-template-columns: repeat(4, 1fr);
@@ -105,7 +101,6 @@
         .card-value { font-size: 16px; font-weight: bold; margin: 2px 0; }
         .card-ev { font-size: 10px; color: var(--text-sub); }
 
-        /* 莊閒獨立選擇與按鈕區 */
         .input-section {
             background-color: var(--card-bg);
             border: 1px solid var(--border-color);
@@ -195,7 +190,6 @@
         .btn-undo { background-color: #d97706; color: white; }
         .btn-reset { background-color: var(--banker-red); color: white; }
 
-        /* 歷史紀錄與 Log */
         .audit-grid {
             display: grid;
             grid-template-columns: 2fr 1fr;
@@ -264,7 +258,6 @@
 <body>
 
 <div class="container">
-    <!-- 頂部狀態橫條 -->
     <div class="status-bar">
         <div class="status-card">
             <div class="status-title">牌靴 / 局號</div>
@@ -288,18 +281,15 @@
         </div>
     </div>
 
-    <!-- 資金管理區塊 -->
     <div class="bankroll-bar">
         <div>💰 總資金庫存: $<input type="number" id="bankroll-input" class="bankroll-input" value="10000" step="1000"></div>
         <div id="kelly-advice" style="font-weight:bold; color:var(--text-sub);">下注建議: 觀望 (無正 EV)</div>
     </div>
 
-    <!-- 動態推薦訊號 -->
     <div id="signal-box" class="signal-box">
         <div id="signal-text" style="color: var(--text-sub);">等待輸入開牌資料...</div>
     </div>
 
-    <!-- 數據看板 (莊/閒/對/和) -->
     <div class="dashboard">
         <div class="card">
             <div class="card-title">莊家機率 / EV</div>
@@ -323,7 +313,6 @@
         </div>
     </div>
 
-    <!-- 莊閒獨立選擇與按鈕區 -->
     <div class="input-section">
         <div class="side-selector">
             <div id="btn-target-player" class="side-btn active-player" onclick="selectSide('P')">
@@ -363,7 +352,6 @@
         </div>
     </div>
 
-    <!-- 歷史牌局紀錄 (Audit Trail) 與 系統日誌 (System Log) -->
     <div class="audit-grid">
         <div class="panel">
             <div class="panel-title">
@@ -387,7 +375,7 @@
         <div class="panel">
             <div class="panel-title">SYSTEM LOG (運算日誌)</div>
             <div id="sys-log" class="sys-log">
-                <div class="log-item"><span class="log-time">[系統啟動]</span> 13 軌進階戰術儀表板已就緒...</div>
+                <div class="log-item"><span class="log-time">[系統啟動]</span> 智慧補牌版 13 軌戰術儀表板已就緒...</div>
             </div>
         </div>
     </div>
@@ -401,7 +389,7 @@
     };
 
     let deck13 = { ...INITIAL_DECK };
-    let historyStack = []; // 用於 Undo 一鍵撤銷
+    let historyStack = [];
     let currentSide = 'P';
     let pHand = [];
     let bHand = [];
@@ -436,6 +424,42 @@
         }
     }
 
+    /* 計算手牌總點數 (0~9) */
+    function getHandScore(hand) {
+        let sum = hand.reduce((acc, c) => {
+            let v = (['10','J','Q','K'].includes(c)) ? 0 : (c === 'A' ? 1 : parseInt(c));
+            return acc + v;
+        }, 0);
+        return sum % 10;
+    }
+
+    /* 計算單張牌的點數 (0~9) */
+    function getCardValue(c) {
+        return (['10','J','Q','K'].includes(c)) ? 0 : (c === 'A' ? 1 : parseInt(c));
+    }
+
+    /* 判斷莊家是否需要補第 3 張牌 */
+    function checkBankerNeedsDraw(bScore, pHand) {
+        if (bScore >= 8) return false;
+
+        // 閒家沒補第 3 張（閒家 6 或 7 點）
+        if (pHand.length === 2) {
+            return bScore <= 5;
+        }
+
+        // 閒家有補第 3 張，需比對閒家第 3 張牌點數
+        let p3 = getCardValue(pHand[2]);
+
+        if (bScore <= 2) return true;
+        if (bScore === 3) return p3 !== 8;
+        if (bScore === 4) return [2, 3, 4, 5, 6, 7].includes(p3);
+        if (bScore === 5) return [4, 5, 6, 7].includes(p3);
+        if (bScore === 6) return [6, 7].includes(p3);
+
+        return false;
+    }
+
+    /* 交替派牌與智慧型補牌規則判定 */
     function addCard(rank) {
         let targetHand = currentSide === 'P' ? pHand : bHand;
         if (targetHand.length >= 3) {
@@ -446,11 +470,37 @@
             alert(`牌庫中已無點數 ${rank}`);
             return;
         }
+
         targetHand.push(rank);
         deck13[rank]--;
-        
-        if (currentSide === 'P' && pHand.length === 2 && bHand.length === 0) {
+
+        // 階段一：前 4 張起手牌交替跳轉 (閒1 -> 莊1 -> 閒2 -> 莊2)
+        if (pHand.length === 1 && bHand.length === 0) {
             selectSide('B');
+        } else if (pHand.length === 1 && bHand.length === 1) {
+            selectSide('P');
+        } else if (pHand.length === 2 && bHand.length === 1) {
+            selectSide('B');
+        } else {
+            // 階段二：前 4 張牌齊全，進行補牌規則判定
+            let pScore = getHandScore(pHand);
+            let bScore = getHandScore(bHand);
+
+            // 1. 天牌 (Natural 8, 9 點) -> 雙方停止補牌
+            if (pHand.length === 2 && bHand.length === 2 && (pScore >= 8 || bScore >= 8)) {
+                addLog(`天牌觸發 (閒 ${pScore} / 莊 ${bScore})，無需補牌`);
+            } 
+            // 2. 閒家補牌判定 (閒起手 0~5 點，且閒尚未補牌)
+            else if (pHand.length === 2 && pScore <= 5) {
+                selectSide('P'); // 自動跳閒家等待補第 3 張
+            } 
+            // 3. 莊家補牌判定
+            else {
+                let bankerNeedsDraw = checkBankerNeedsDraw(bScore, pHand);
+                if (bankerNeedsDraw && bHand.length === 2) {
+                    selectSide('B'); // 自動跳莊家等待補第 3 張
+                }
+            }
         }
 
         updateHandUI();
@@ -462,9 +512,10 @@
             let last = targetHand.pop();
             deck13[last]++;
         } else {
+            let otherSide = currentSide === 'P' ? 'B' : 'P';
             let otherHand = currentSide === 'P' ? bHand : pHand;
             if (otherHand.length > 0) {
-                selectSide(currentSide === 'P' ? 'B' : 'P');
+                selectSide(otherSide);
                 let last = otherHand.pop();
                 deck13[last]++;
             }
@@ -496,7 +547,6 @@
             return;
         }
 
-        // 保存狀態以供 Undo
         historyStack.push({
             pHand: [...pHand],
             bHand: [...bHand],
@@ -511,7 +561,6 @@
         });
 
         handCount++;
-        let prevRC = currentRC;
         let allHand = [...pHand, ...bHand];
 
         allHand.forEach(card => {
@@ -519,13 +568,8 @@
             else if (['10','J','Q','K','A'].includes(card)) currentRC--;
         });
 
-        let getVal = cards => cards.reduce((acc, c) => {
-            let v = (['10','J','Q','K'].includes(c)) ? 0 : (c === 'A' ? 1 : parseInt(c));
-            return (acc + v) % 10;
-        }, 0);
-
-        let pVal = getVal(pHand);
-        let bVal = getVal(bHand);
+        let pVal = getHandScore(pHand);
+        let bVal = getHandScore(bHand);
         let resultStr = pVal > bVal ? '閒勝' : (bVal > pVal ? '莊勝' : '和局');
 
         if (lastRecommendation.includes('莊') && bVal > pVal) winCount++;
@@ -539,7 +583,6 @@
 
         const tbody = document.getElementById('history-tbody');
         const row = document.createElement('tr');
-        row.setAttribute('id', `hand-row-${handCount}`);
         row.innerHTML = `
             <td>#${handCount}</td>
             <td>閒:[${pHand.join('')}] 莊:[${bHand.join('')}]</td>
@@ -575,7 +618,6 @@
         tieCount = lastState.tieCountSnap;
         skipCount = lastState.skipCountSnap;
 
-        // 移除畫面上最後一筆紀錄
         const tbody = document.getElementById('history-tbody');
         if (tbody.firstChild) tbody.removeChild(tbody.firstChild);
 
@@ -674,11 +716,10 @@
         document.getElementById('ev-pair').innerText = `EV: ${(evPair * 100).toFixed(2)}%`;
         document.getElementById('ev-t').innerText = `EV: ${(evT * 100).toFixed(2)}%`;
 
-        // 資金與凱利計算
         let bankroll = parseFloat(document.getElementById('bankroll-input').value) || 10000;
         let kellyAdviceText = '下注建議: 觀望 (無正 EV)';
 
-        const T_MAIN = 0.0015; // 觸發門檻
+        const T_MAIN = 0.0015;
         const T_PAIR = 0.0100;
 
         let signals = [];
